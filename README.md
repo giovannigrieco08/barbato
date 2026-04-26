@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Studio Dentistico Fabio Barbato — Next.js 15 production
 
-## Getting Started
+Sito production-premium dello Studio Dentistico Fabio Barbato (Manfredonia · Apulia).
+Migrazione del prototipo Babel-in-browser ([../barbato2](../barbato2)) a Next.js 15 con
+ottimizzazioni production complete: font locali, video multi-source, immagini AVIF/WebP
+con next/image, scroll smoothing Lenis, code-splitting GSAP, structured data, security headers.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** (App Router · Turbopack · TypeScript)
+- **Tailwind CSS v4** (`@theme` directive)
+- **Framer Motion** 11 — reveal + magnetic + chat animations
+- **GSAP 3 + ScrollTrigger** — pin choreography (Manifesto, GalleriaStudio, DrBarbato)
+- **Lenis** 1.x — smooth scroll dynamic-imported per desktop hover-pointer (skip iOS)
+
+## Comandi
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # http://localhost:3000
+npm run build     # production build
+npm run start     # serve production
+npm run lint      # eslint check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Pronto per Vercel:
+```bash
+vercel deploy
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+In alternativa, qualsiasi host Node 18+ supporta `npm run build && npm run start`.
 
-## Learn More
+## Struttura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── globals.css          stili globali (liquid-glass, splash, reveal-word, ecc.)
+│   ├── layout.tsx           metadata SEO, fonts, providers, structured data
+│   ├── page.tsx             homepage (assembla sezioni)
+│   ├── sitemap.ts           sitemap dinamica
+│   └── robots.ts            robots.txt
+├── components/
+│   ├── ui.tsx               primitives: BlurText, MagneticButton, Icon, ecc.
+│   ├── reveals.tsx          reveal primitives (RevealLines, RevealText, ecc.)
+│   ├── StructuredData.tsx   schema.org Dentist
+│   ├── providers/
+│   │   └── SmoothScrollProvider.tsx   Lenis dynamic
+│   └── (sezioni)            Manifesto, Treatments, ... (vedi NOTES.md per stato)
+public/
+├── images/
+├── videos/
+└── fonts/
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stato della migrazione
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Vedi [NOTES.md](./NOTES.md) per lo stato dettagliato del porting di ogni componente
+e per i passi rimanenti (font woff2, video multi-source, next/image migration).
 
-## Deploy on Vercel
+## Performance target (post-migrazione completa)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Lighthouse: Performance ≥95, Accessibility 100, Best Practices 100, SEO 100
+- First Load JS: < 200KB
+- LCP: < 1.8s
+- CLS: < 0.05
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Branding
+
+- **Palette**: `--background: #0A2E36` (ink), `--foreground: #F4F1EA` (bone), `--primary: #8FC8C4` (mint)
+- **Font**: Instrument Serif (display, italic), Barlow (body), FunCity (wordmark)
+- Studio Dentistico Fabio Barbato · Via del Porto, 14 · 71043 Manfredonia (FG)
