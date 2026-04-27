@@ -305,8 +305,8 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
 
   if (isPhone) return null;
 
-  const PHOTO_SRC = "/images/dr-fabio-barbato.png";
-  const PHOTO_FILTER = "grayscale(1) contrast(1.05)";
+  const PHOTO_SRC = "/images/dr-fabio-barbato-portrait.jpg";
+  const PHOTO_FILTER = "none";
 
   return (
     <section
@@ -447,7 +447,7 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
         }}
       >
         <Image
-          src="/images/dr-fabio-barbato.png"
+          src="/images/dr-fabio-barbato-portrait.jpg"
           alt="Dr. Fabio Barbato"
           fill
           sizes="100vw"
@@ -456,7 +456,6 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
             objectFit: "cover",
             objectPosition: "center 28%",
             display: "block",
-            filter: "grayscale(1) contrast(1.05)",
           }}
         />
         <div
