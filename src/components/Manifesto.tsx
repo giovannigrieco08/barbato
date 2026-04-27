@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const M_INK = "#0A2E36";
 const M_BONE = "#F4F1EA";
-
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 function naturalVideoWidth(vw: number) {
   if (vw < 768) return Math.min(vw * 0.78, 420);
@@ -14,16 +11,17 @@ function naturalVideoWidth(vw: number) {
   return Math.min(vw * 0.38, 720);
 }
 
-function applyCoverScale(videoBox: HTMLDivElement) {
+// Calcola le insets % per la "window" 16:9 centrata che corrisponde al
+// design originale ad ogni breakpoint. I 4 pannelli laterali animano la
+// loro width/height da 0 a queste percentuali → effetto "shrink" del video.
+function computeFrameInsets(): { ix: number; iy: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const naturalW = naturalVideoWidth(vw);
-  const naturalH = naturalW * (9 / 16);
-  const coverScale = Math.max(vw / naturalW, vh / naturalH);
-  videoBox.style.setProperty("--scale", String(coverScale));
-  videoBox.style.setProperty("--border-opacity", "0");
-  videoBox.style.setProperty("--shadow-opacity", "0");
-  videoBox.style.setProperty("--radius", "0px");
+  const targetW = naturalVideoWidth(vw);
+  const targetH = targetW * (9 / 16);
+  const ix = Math.max(0, ((vw - targetW) / 2 / vw) * 100);
+  const iy = Math.max(0, ((vh - targetH) / 2 / vh) * 100);
+  return { ix, iy };
 }
 
 function TopographicPattern() {
@@ -93,13 +91,11 @@ export default function Manifesto() {
   const topRowRef = useRef<HTMLDivElement>(null);
   const botRowRef = useRef<HTMLDivElement>(null);
   const patternRef = useRef<HTMLDivElement>(null);
-
-  useIsoLayoutEffect(() => {
-    const videoBox = videoBoxRef.current;
-    if (!videoBox) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    applyCoverScale(videoBox);
-  }, []);
+  const frameTopRef = useRef<HTMLDivElement>(null);
+  const frameBottomRef = useRef<HTMLDivElement>(null);
+  const frameLeftRef = useRef<HTMLDivElement>(null);
+  const frameRightRef = useRef<HTMLDivElement>(null);
+  const frameBorderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -108,6 +104,7 @@ export default function Manifesto() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let tl: any = null;
     let onLoad: (() => void) | null = null;
+    let onResize: (() => void) | null = null;
     let timeout: ReturnType<typeof setTimeout> | null = null;
 
     (async () => {
@@ -128,6 +125,11 @@ export default function Manifesto() {
       const topRow = topRowRef.current;
       const botRow = botRowRef.current;
       const pattern = patternRef.current;
+      const frameTop = frameTopRef.current;
+      const frameBottom = frameBottomRef.current;
+      const frameLeft = frameLeftRef.current;
+      const frameRight = frameRightRef.current;
+      const frameBorder = frameBorderRef.current;
       if (!section || !sticky || !videoBox) return;
 
       const all = [topRow, botRow, videoBox, heroText, based, pattern];
@@ -145,17 +147,20 @@ export default function Manifesto() {
         });
       };
 
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const naturalW = naturalVideoWidth(vw);
-      const naturalH = naturalW * (9 / 16);
-      const coverScale = Math.max(vw / naturalW, vh / naturalH);
-
-      gsap.set(videoBox, {
-        "--scale": coverScale,
-        "--border-opacity": 0,
-        "--shadow-opacity": 0,
-        "--radius": "0px",
+      // Stato iniziale: i 4 pannelli "frame" hanno dimensione 0 → il video
+      // full-viewport è completamente visibile. Il border della "window" è
+      // invisibile (opacity 0, border-color trasparente).
+      gsap.set([frameTop, frameBottom], { height: 0 });
+      gsap.set([frameLeft, frameRight], { width: 0 });
+      gsap.set(frameBorder, {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        borderColor: "rgba(244, 241, 234, 0)",
+        borderRadius: 0,
+        boxShadow: "0 20px 50px rgba(0, 0, 0, 0)",
+        opacity: 0,
       });
       gsap.set([pattern, topRow, botRow], { opacity: 0 });
 
@@ -178,20 +183,52 @@ export default function Manifesto() {
         },
       });
 
+      // Calcolo le insets target per "shrink to original-window 16:9".
+      // invalidateOnRefresh + onResize li ricalcola se la viewport cambia.
+      let targets = computeFrameInsets();
+
       tl.to(heroText, { opacity: 0, y: -40, ease: "power1.out", duration: 0.2 }, 0.1);
       tl.to(based, { opacity: 0, y: 30, ease: "power1.out", duration: 0.2 }, 0.1);
+
+      // Animazione "frame": i 4 pannelli neri crescono dai bordi verso
+      // il centro. Effetto visivo = il video sembra ridursi a una window
+      // 16:9 centrata, ma il <video> NON viene mai trasformato → niente
+      // bug da scale/clip-path.
       tl.to(
-        videoBox,
+        [frameTop, frameBottom],
         {
-          "--scale": 1,
-          "--border-opacity": 0.18,
-          "--shadow-opacity": 0.45,
-          "--radius": "4px",
+          height: () => `${targets.iy}%`,
           ease: "power2.inOut",
           duration: 0.5,
         },
         0.05
       );
+      tl.to(
+        [frameLeft, frameRight],
+        {
+          width: () => `${targets.ix}%`,
+          ease: "power2.inOut",
+          duration: 0.5,
+        },
+        0.05
+      );
+      tl.to(
+        frameBorder,
+        {
+          top: () => `${targets.iy}%`,
+          bottom: () => `${targets.iy}%`,
+          left: () => `${targets.ix}%`,
+          right: () => `${targets.ix}%`,
+          borderColor: "rgba(244, 241, 234, 0.18)",
+          borderRadius: 4,
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.45)",
+          opacity: 1,
+          ease: "power2.inOut",
+          duration: 0.5,
+        },
+        0.05
+      );
+
       tl.to(pattern, { opacity: 1, ease: "power1.out", duration: 0.2 }, 0.3);
       tl.to(topRow, { opacity: 1, ease: "power1.out", duration: 0.15 }, 0.4);
       tl.to(botRow, { opacity: 1, ease: "power1.out", duration: 0.15 }, 0.45);
@@ -215,7 +252,7 @@ export default function Manifesto() {
       );
       tl.to(
         videoBox,
-        { opacity: 0.5, "--scale": 0.95, ease: "power2.in", duration: 0.15 },
+        { opacity: 0.5, ease: "power2.in", duration: 0.15 },
         0.85
       );
       tl.to(
@@ -224,7 +261,16 @@ export default function Manifesto() {
         0.85
       );
 
-      const refresh = () => ScrollTrigger.refresh();
+      onResize = () => {
+        targets = computeFrameInsets();
+        ScrollTrigger.refresh();
+      };
+      window.addEventListener("resize", onResize);
+
+      const refresh = () => {
+        targets = computeFrameInsets();
+        ScrollTrigger.refresh();
+      };
       timeout = setTimeout(refresh, 200);
       onLoad = refresh;
       window.addEventListener("load", onLoad);
@@ -234,6 +280,7 @@ export default function Manifesto() {
       cancelled = true;
       if (timeout) clearTimeout(timeout);
       if (onLoad) window.removeEventListener("load", onLoad);
+      if (onResize) window.removeEventListener("resize", onResize);
       if (tl) {
         tl.scrollTrigger?.kill();
         tl.kill();
@@ -251,6 +298,28 @@ export default function Manifesto() {
       data-sticky-overlap="A"
     >
       <div ref={stickyRef} className="manifesto-sticky">
+        <div ref={videoBoxRef} className="manifesto-window">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster="/videos/hero-poster.jpg"
+            aria-hidden="true"
+          >
+            <source src="/videos/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+            <source src="/videos/hero-desktop.mp4" type="video/mp4" />
+          </video>
+          <div className="manifesto-window-overlay" aria-hidden="true" />
+        </div>
+
+        <div ref={frameTopRef} className="manifesto-frame manifesto-frame-top" aria-hidden="true" />
+        <div ref={frameBottomRef} className="manifesto-frame manifesto-frame-bottom" aria-hidden="true" />
+        <div ref={frameLeftRef} className="manifesto-frame manifesto-frame-left" aria-hidden="true" />
+        <div ref={frameRightRef} className="manifesto-frame manifesto-frame-right" aria-hidden="true" />
+        <div ref={frameBorderRef} className="manifesto-frame-border" aria-hidden="true" />
+
         <div ref={patternRef} className="manifesto-pattern-wrap">
           <TopographicPattern />
         </div>
@@ -271,22 +340,6 @@ export default function Manifesto() {
             opacity={0.12}
             dir="right"
           />
-        </div>
-
-        <div ref={videoBoxRef} className="manifesto-window">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster="/videos/hero-poster.jpg"
-            aria-hidden="true"
-          >
-            <source src="/videos/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
-            <source src="/videos/hero-desktop.mp4" type="video/mp4" />
-          </video>
-          <div className="manifesto-window-overlay" aria-hidden="true" />
         </div>
 
         <div ref={heroTextRef} className="manifesto-hero-text">
@@ -326,14 +379,14 @@ export default function Manifesto() {
           position: absolute;
           inset: 0;
           width: 130%;
-          z-index: 1;
+          z-index: 4;
           pointer-events: none;
         }
         .manifesto-pattern { width: 100%; height: 100%; display: block; }
         .manifesto-row {
           position: absolute;
           left: 0; right: 0;
-          z-index: 3;
+          z-index: 5;
           pointer-events: none;
         }
         .manifesto-row-top { top: 30%; }
@@ -357,21 +410,18 @@ export default function Manifesto() {
           color: ${M_BONE};
         }
         .manifesto-marquee-word { display: inline-block; padding-right: 0.4em; }
+
+        /* Video di base — SEMPRE full-viewport, MAI trasformato.
+           È il layer più in basso (z-1). */
         .manifesto-window {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          width: min(38vw, 720px);
-          aspect-ratio: 16 / 9;
-          transform: translate(-50%, -50%) scale(var(--scale, 1));
-          transform-origin: center center;
-          z-index: 10;
-          border: 1px solid rgba(244, 241, 234, var(--border-opacity, 0.18));
-          border-radius: var(--radius, 4px);
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 1;
           background: ${M_INK};
-          box-shadow: 0 20px 50px rgba(0, 0, 0, var(--shadow-opacity, 0.45));
           overflow: hidden;
-          will-change: transform, opacity;
+          will-change: opacity;
         }
         .manifesto-window video {
           width: 100%;
@@ -386,6 +436,36 @@ export default function Manifesto() {
           background: linear-gradient(180deg, rgba(10,46,54,0.15) 0%, rgba(10,46,54,0.0) 30%, rgba(10,46,54,0.0) 70%, rgba(10,46,54,0.35) 100%);
           pointer-events: none;
         }
+
+        /* I 4 pannelli "frame" che, crescendo dai bordi durante lo scroll,
+           creano l'effetto "video che si stringe in una window 16:9
+           centrata". Niente trasformazioni del video. */
+        .manifesto-frame {
+          position: absolute;
+          background: ${M_INK};
+          z-index: 2;
+          pointer-events: none;
+          will-change: width, height;
+        }
+        .manifesto-frame-top    { top: 0;    left: 0;   right: 0;  height: 0; }
+        .manifesto-frame-bottom { bottom: 0; left: 0;   right: 0;  height: 0; }
+        .manifesto-frame-left   { top: 0;    bottom: 0; left: 0;   width: 0; }
+        .manifesto-frame-right  { top: 0;    bottom: 0; right: 0;  width: 0; }
+
+        /* Border + radius + shadow della "window" — animati a comparsa
+           sopra ai frame. */
+        .manifesto-frame-border {
+          position: absolute;
+          z-index: 3;
+          top: 0; bottom: 0; left: 0; right: 0;
+          border: 1px solid rgba(244, 241, 234, 0);
+          border-radius: 0;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0);
+          opacity: 0;
+          pointer-events: none;
+          will-change: top, bottom, left, right, opacity;
+        }
+
         .manifesto-hero-text {
           position: absolute;
           top: 50%;
@@ -449,13 +529,11 @@ export default function Manifesto() {
           opacity: 0.9;
         }
         @media (max-width: 1023px) {
-          .manifesto-window { width: min(48vw, 560px); }
           .manifesto-marquee-track { font-size: clamp(6rem, 12vw, 9rem); }
         }
         .hero-break-mobile { display: none; }
         @media (max-width: 767px) {
           .hero-break-mobile { display: inline; }
-          .manifesto-window { width: min(78vw, 420px); }
           .manifesto-marquee-track { font-size: clamp(2.75rem, 14vw, 5rem); letter-spacing: -0.015em; }
           .manifesto-hero-headline { font-size: clamp(3rem, 14vw, 5.5rem); letter-spacing: -0.025em; line-height: 0.92; }
           .manifesto-hero-eyebrow { font-size: 11px; letter-spacing: 0.18em; }
@@ -466,10 +544,9 @@ export default function Manifesto() {
           .manifesto-marquee-track { font-size: clamp(2.25rem, 13vw, 4rem); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .manifesto-window {
-            transform: translate(-50%, -50%) !important;
-            opacity: 1 !important;
-          }
+          .manifesto-window { opacity: 1 !important; }
+          .manifesto-frame { display: none !important; }
+          .manifesto-frame-border { display: none !important; }
           .manifesto-marquee, .manifesto-pattern-wrap { opacity: 1 !important; transform: none !important; }
         }
       `}</style>

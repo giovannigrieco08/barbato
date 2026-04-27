@@ -139,7 +139,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
 
         <div className="flex items-center gap-3 shrink-0 ml-auto lg:ml-0">
           <MagneticButton
-            className="hidden sm:inline-flex items-center gap-2 liquid-glass-gold hero-cta-navbar rounded-full group"
+            className="nav-cta-prenota hidden lg:inline-flex items-center gap-2 liquid-glass-gold hero-cta-navbar rounded-full group"
             onClick={onOpenChat}
             style={{ color: fg }}
           >
