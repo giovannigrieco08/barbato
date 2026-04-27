@@ -58,6 +58,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
 
   const links: [string, string][] = [
     ["Trattamenti", "#trattamenti"],
+    ["Smile Assistant", "#assistant"],
     ["Studio", "#studio"],
     ["Dr. Barbato", "#dottore"],
     ["Contatti", "#contatti"],

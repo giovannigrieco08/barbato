@@ -11,10 +11,10 @@ function naturalVideoWidth(vw: number) {
   return Math.min(vw * 0.38, 720);
 }
 
-// Calcola le insets % per la "window" 16:9 centrata che corrisponde al
-// design originale ad ogni breakpoint. I 4 pannelli laterali animano la
-// loro width/height da 0 a queste percentuali → effetto "shrink" del video.
-function computeFrameInsets(): { ix: number; iy: number } {
+// Insets % che rivelano una "window" 16:9 centrata della dimensione
+// originale del design. Animate via CSS variables → GSAP tween numerico
+// per ognuna, niente parsing di stringhe clip-path complesse → niente bug.
+function computeInsets(): { ix: number; iy: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const targetW = naturalVideoWidth(vw);
@@ -91,11 +91,7 @@ export default function Manifesto() {
   const topRowRef = useRef<HTMLDivElement>(null);
   const botRowRef = useRef<HTMLDivElement>(null);
   const patternRef = useRef<HTMLDivElement>(null);
-  const frameTopRef = useRef<HTMLDivElement>(null);
-  const frameBottomRef = useRef<HTMLDivElement>(null);
-  const frameLeftRef = useRef<HTMLDivElement>(null);
-  const frameRightRef = useRef<HTMLDivElement>(null);
-  const frameBorderRef = useRef<HTMLDivElement>(null);
+  const windowBorderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -125,11 +121,7 @@ export default function Manifesto() {
       const topRow = topRowRef.current;
       const botRow = botRowRef.current;
       const pattern = patternRef.current;
-      const frameTop = frameTopRef.current;
-      const frameBottom = frameBottomRef.current;
-      const frameLeft = frameLeftRef.current;
-      const frameRight = frameRightRef.current;
-      const frameBorder = frameBorderRef.current;
+      const windowBorder = windowBorderRef.current;
       if (!section || !sticky || !videoBox) return;
 
       const all = [topRow, botRow, videoBox, heroText, based, pattern];
@@ -147,12 +139,15 @@ export default function Manifesto() {
         });
       };
 
-      // Stato iniziale: i 4 pannelli "frame" hanno dimensione 0 → il video
-      // full-viewport è completamente visibile. Il border della "window" è
-      // invisibile (opacity 0, border-color trasparente).
-      gsap.set([frameTop, frameBottom], { height: 0 });
-      gsap.set([frameLeft, frameRight], { width: 0 });
-      gsap.set(frameBorder, {
+      // Stato iniziale: video copre tutta la viewport (clip-path inset 0).
+      // Pattern + marquee partono opacity 0 e sono comunque DIETRO al video
+      // → invisibili a t=0.
+      gsap.set(videoBox, {
+        "--ci-y": "0%",
+        "--ci-x": "0%",
+        "--ci-r": "0px",
+      });
+      gsap.set(windowBorder, {
         top: 0,
         bottom: 0,
         left: 0,
@@ -183,37 +178,28 @@ export default function Manifesto() {
         },
       });
 
-      // Calcolo le insets target per "shrink to original-window 16:9".
-      // invalidateOnRefresh + onResize li ricalcola se la viewport cambia.
-      let targets = computeFrameInsets();
+      let targets = computeInsets();
 
       tl.to(heroText, { opacity: 0, y: -40, ease: "power1.out", duration: 0.2 }, 0.1);
       tl.to(based, { opacity: 0, y: 30, ease: "power1.out", duration: 0.2 }, 0.1);
 
-      // Animazione "frame": i 4 pannelli neri crescono dai bordi verso
-      // il centro. Effetto visivo = il video sembra ridursi a una window
-      // 16:9 centrata, ma il <video> NON viene mai trasformato → niente
-      // bug da scale/clip-path.
+      // Video shrink: animo le 3 CSS variables (--ci-y, --ci-x, --ci-r) che
+      // il browser ricompone in clip-path: inset(...) round ... . Ogni var
+      // viene tweenata numericamente da GSAP → tween simmetrico, niente bug.
       tl.to(
-        [frameTop, frameBottom],
+        videoBox,
         {
-          height: () => `${targets.iy}%`,
+          "--ci-y": () => `${targets.iy}%`,
+          "--ci-x": () => `${targets.ix}%`,
+          "--ci-r": "4px",
           ease: "power2.inOut",
           duration: 0.5,
         },
         0.05
       );
+      // Border della window (sopra video) — appare con la stessa cinetica
       tl.to(
-        [frameLeft, frameRight],
-        {
-          width: () => `${targets.ix}%`,
-          ease: "power2.inOut",
-          duration: 0.5,
-        },
-        0.05
-      );
-      tl.to(
-        frameBorder,
+        windowBorder,
         {
           top: () => `${targets.iy}%`,
           bottom: () => `${targets.iy}%`,
@@ -262,13 +248,13 @@ export default function Manifesto() {
       );
 
       onResize = () => {
-        targets = computeFrameInsets();
+        targets = computeInsets();
         ScrollTrigger.refresh();
       };
       window.addEventListener("resize", onResize);
 
       const refresh = () => {
-        targets = computeFrameInsets();
+        targets = computeInsets();
         ScrollTrigger.refresh();
       };
       timeout = setTimeout(refresh, 200);
@@ -298,28 +284,9 @@ export default function Manifesto() {
       data-sticky-overlap="A"
     >
       <div ref={stickyRef} className="manifesto-sticky">
-        <div ref={videoBoxRef} className="manifesto-window">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster="/videos/hero-poster.jpg"
-            aria-hidden="true"
-          >
-            <source src="/videos/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
-            <source src="/videos/hero-desktop.mp4" type="video/mp4" />
-          </video>
-          <div className="manifesto-window-overlay" aria-hidden="true" />
-        </div>
-
-        <div ref={frameTopRef} className="manifesto-frame manifesto-frame-top" aria-hidden="true" />
-        <div ref={frameBottomRef} className="manifesto-frame manifesto-frame-bottom" aria-hidden="true" />
-        <div ref={frameLeftRef} className="manifesto-frame manifesto-frame-left" aria-hidden="true" />
-        <div ref={frameRightRef} className="manifesto-frame manifesto-frame-right" aria-hidden="true" />
-        <div ref={frameBorderRef} className="manifesto-frame-border" aria-hidden="true" />
-
+        {/* Pattern + marquee z-1, z-2 — DIETRO al video. Sono invisibili
+            durante il video full-viewport, emergono solo nei bordi quando
+            il video si stringe alla window 16:9 centrale. */}
         <div ref={patternRef} className="manifesto-pattern-wrap">
           <TopographicPattern />
         </div>
@@ -341,6 +308,28 @@ export default function Manifesto() {
             dir="right"
           />
         </div>
+
+        {/* Video full-viewport sopra a pattern/marquee. Clip-path animato
+            via CSS variables per "stringere" alla window 16:9. */}
+        <div ref={videoBoxRef} className="manifesto-window">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster="/videos/hero-poster.jpg"
+            aria-hidden="true"
+          >
+            <source src="/videos/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+            <source src="/videos/hero-desktop.mp4" type="video/mp4" />
+          </video>
+          <div className="manifesto-window-overlay" aria-hidden="true" />
+        </div>
+
+        {/* Border della window — sopra il video clipped, opacità + posizione
+            animate per emergere insieme al shrink. */}
+        <div ref={windowBorderRef} className="manifesto-window-border" aria-hidden="true" />
 
         <div ref={heroTextRef} className="manifesto-hero-text">
           <div className="manifesto-hero-eyebrow">Studio Dentistico · Manfredonia</div>
@@ -375,18 +364,20 @@ export default function Manifesto() {
           height: 100svh;
           overflow: hidden;
         }
+
+        /* Pattern + marquee — DIETRO il video. */
         .manifesto-pattern-wrap {
           position: absolute;
           inset: 0;
           width: 130%;
-          z-index: 4;
+          z-index: 1;
           pointer-events: none;
         }
         .manifesto-pattern { width: 100%; height: 100%; display: block; }
         .manifesto-row {
           position: absolute;
           left: 0; right: 0;
-          z-index: 5;
+          z-index: 2;
           pointer-events: none;
         }
         .manifesto-row-top { top: 30%; }
@@ -411,17 +402,22 @@ export default function Manifesto() {
         }
         .manifesto-marquee-word { display: inline-block; padding-right: 0.4em; }
 
-        /* Video di base — SEMPRE full-viewport, MAI trasformato.
-           È il layer più in basso (z-1). */
+        /* Video full-viewport sopra a pattern + marquee. clip-path
+           animato tramite CSS variables: GSAP tweena ogni var
+           numericamente, il browser ricompone la stringa clip-path. */
         .manifesto-window {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
-          z-index: 1;
+          z-index: 3;
           background: ${M_INK};
           overflow: hidden;
-          will-change: opacity;
+          --ci-y: 0%;
+          --ci-x: 0%;
+          --ci-r: 0px;
+          clip-path: inset(var(--ci-y) var(--ci-x) var(--ci-y) var(--ci-x) round var(--ci-r));
+          will-change: clip-path, opacity;
         }
         .manifesto-window video {
           width: 100%;
@@ -437,26 +433,10 @@ export default function Manifesto() {
           pointer-events: none;
         }
 
-        /* I 4 pannelli "frame" che, crescendo dai bordi durante lo scroll,
-           creano l'effetto "video che si stringe in una window 16:9
-           centrata". Niente trasformazioni del video. */
-        .manifesto-frame {
+        /* Window border — sopra il video, animato in posizione + opacità */
+        .manifesto-window-border {
           position: absolute;
-          background: ${M_INK};
-          z-index: 2;
-          pointer-events: none;
-          will-change: width, height;
-        }
-        .manifesto-frame-top    { top: 0;    left: 0;   right: 0;  height: 0; }
-        .manifesto-frame-bottom { bottom: 0; left: 0;   right: 0;  height: 0; }
-        .manifesto-frame-left   { top: 0;    bottom: 0; left: 0;   width: 0; }
-        .manifesto-frame-right  { top: 0;    bottom: 0; right: 0;  width: 0; }
-
-        /* Border + radius + shadow della "window" — animati a comparsa
-           sopra ai frame. */
-        .manifesto-frame-border {
-          position: absolute;
-          z-index: 3;
+          z-index: 4;
           top: 0; bottom: 0; left: 0; right: 0;
           border: 1px solid rgba(244, 241, 234, 0);
           border-radius: 0;
@@ -545,8 +525,7 @@ export default function Manifesto() {
         }
         @media (prefers-reduced-motion: reduce) {
           .manifesto-window { opacity: 1 !important; }
-          .manifesto-frame { display: none !important; }
-          .manifesto-frame-border { display: none !important; }
+          .manifesto-window-border { display: none !important; }
           .manifesto-marquee, .manifesto-pattern-wrap { opacity: 1 !important; transform: none !important; }
         }
       `}</style>
