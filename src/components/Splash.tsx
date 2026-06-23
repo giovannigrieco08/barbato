@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
  * Exits after `duration`ms or on click. Respects prefers-reduced-motion.
  */
 export default function Splash({
-  duration = 1800,
+  duration = 1500,
   onComplete,
 }: {
   duration?: number;
@@ -19,6 +19,17 @@ export default function Splash({
 
   useEffect(() => {
     if (!mounted) {
+      onComplete?.();
+      return;
+    }
+    // Già vista in questa sessione → niente splash (unmount prima del paint
+    // di ring/wordmark, che partono con delay ≥200ms: nessun flash visibile).
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem("splash-seen") === "1";
+    } catch {}
+    if (seen) {
+      setMounted(false);
       onComplete?.();
       return;
     }

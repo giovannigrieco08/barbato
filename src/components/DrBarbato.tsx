@@ -65,17 +65,21 @@ function DrBarbatoFAQItem({
   a,
   open,
   onToggle,
+  panelId,
 }: {
   q: string;
   a: string;
   open: boolean;
   onToggle: () => void;
+  panelId: string;
 }) {
   return (
     <div style={{ borderBottom: "1px solid rgba(244,241,234,0.18)" }}>
       <button
         onClick={onToggle}
         data-cursor="hover"
+        aria-expanded={open}
+        aria-controls={panelId}
         className="w-full flex items-center justify-between gap-6 text-left"
         style={{
           padding: "20px 0",
@@ -97,7 +101,7 @@ function DrBarbatoFAQItem({
         </span>
         <motion.span
           animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
+          transition={{ duration: 0.34, ease: EASE }}
           style={{ color: "#F4F1EA", flexShrink: 0 }}
         >
           <Icon.Plus size={20} />
@@ -106,18 +110,20 @@ function DrBarbatoFAQItem({
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            style={{ overflow: "hidden" }}
+            id={panelId}
+            initial={{ gridTemplateRows: "0fr", opacity: 0 }}
+            animate={{ gridTemplateRows: "1fr", opacity: 1 }}
+            exit={{ gridTemplateRows: "0fr", opacity: 0 }}
+            transition={{ duration: 0.38, ease: EASE }}
+            style={{ display: "grid", overflow: "hidden" }}
           >
             <p
               className="font-body"
               style={{
+                minHeight: 0,
                 fontSize: "0.9375rem",
                 lineHeight: 1.65,
-                color: "rgba(244,241,234,0.75)",
+                color: "rgba(244,241,234,0.8)",
                 paddingBottom: "20px",
                 paddingRight: "2rem",
                 margin: 0,
@@ -144,27 +150,15 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 1023px)").matches
   );
-  const [isPhone, setIsPhone] = useState(() =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 767px)").matches
-  );
   const [openFaq, setOpenFaq] = useState(0);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const mqMobile = window.matchMedia("(max-width: 1023px)");
-    const mqPhone = window.matchMedia("(max-width: 767px)");
-    const onChange = () => {
-      setIsMobile(mqMobile.matches);
-      setIsPhone(mqPhone.matches);
-    };
+    const onChange = () => setIsMobile(mqMobile.matches);
     onChange();
     mqMobile.addEventListener("change", onChange);
-    mqPhone.addEventListener("change", onChange);
-    return () => {
-      mqMobile.removeEventListener("change", onChange);
-      mqPhone.removeEventListener("change", onChange);
-    };
+    return () => mqMobile.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {
@@ -303,8 +297,6 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
     };
   }, [isMobile]);
 
-  if (isPhone) return null;
-
   const PHOTO_SRC = "/images/dr-fabio-barbato-portrait.jpg";
   const PHOTO_FILTER = "none";
 
@@ -406,6 +398,7 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
                 key={i}
                 q={q}
                 a={a}
+                panelId={`dr-faq-panel-${i}`}
                 open={openFaq === i}
                 onToggle={() => setOpenFaq(openFaq === i ? -1 : i)}
               />
@@ -421,7 +414,7 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
             right: 0,
             bottom: "5vh",
             margin: 0,
-            fontSize: "clamp(5rem, 11vw, 11rem)",
+            fontSize: "clamp(4rem, 9vw, 8rem)",
             fontStyle: "italic",
             lineHeight: 0.9,
             letterSpacing: "-0.02em",
@@ -435,9 +428,9 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
         </h3>
       </div>
 
-      {/* Tablet (768-1023): full-screen photo + CTA chat — same as phone fallback shape */}
+      {/* Phone + tablet (<1024): full-screen photo + CTA chat that opens the FAQ chat */}
       <div
-        className="dr-barbato-mobile md:hidden lg:hidden"
+        className="dr-barbato-mobile lg:hidden"
         style={{
           position: "relative",
           width: "100vw",

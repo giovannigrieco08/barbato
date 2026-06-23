@@ -20,6 +20,13 @@
    Due varianti reali (neutro + accent teal) + un'elevazione per i pannelli.
    Cambiare il vetro del sito = cambiare questi token. */
 :root {
+  /* ————— Easing tokens —————
+     Curve uniche del sito. Ingressi/hover → ease-out forte; movimento
+     on-screen → ease-in-out; drawer/pannelli → curva iOS. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
   --glass-blur: 18px;
 
   /* Neutro (bone su fondo teal scuro) */
@@ -137,7 +144,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   --progress: 0%;
   -webkit-mask-image: conic-gradient(from 0deg at 50% 50%, #000 0%, #000 var(--progress), transparent var(--progress), transparent 100%);
   mask-image: conic-gradient(from 0deg at 50% 50%, #000 0%, #000 var(--progress), transparent var(--progress), transparent 100%);
-  animation: splash-draw 1000ms cubic-bezier(0.7, 0, 0.3, 1) 200ms forwards;
+  animation: splash-draw 900ms cubic-bezier(0.7, 0, 0.3, 1) 120ms forwards;
 }
 @keyframes splash-draw {
   from { --progress: 0%; }
@@ -158,14 +165,14 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   font-family: var(--font-funcity), 'Barlow', sans-serif;
   text-align: center;
   opacity: 0; transform: translateY(8px);
-  animation: splash-rise 600ms cubic-bezier(0.7, 0, 0.3, 1) 1100ms forwards;
+  animation: splash-rise 520ms cubic-bezier(0.7, 0, 0.3, 1) 720ms forwards;
 }
 .splash-sub {
   color: rgba(244, 241, 234, 0.6); font-weight: 300; font-size: 11px; letter-spacing: 0.34em; margin: 0;
   font-family: var(--font-funcity), 'Barlow', sans-serif;
   text-align: center;
   opacity: 0; transform: translateY(8px);
-  animation: splash-rise 600ms cubic-bezier(0.7, 0, 0.3, 1) 1300ms forwards;
+  animation: splash-rise 520ms cubic-bezier(0.7, 0, 0.3, 1) 880ms forwards;
 }
 @media (max-width: 479px) {
   .splash-title { font-size: 22px; letter-spacing: 0.22em; }
@@ -227,7 +234,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   background: rgba(143, 200, 196, 0.12);
   opacity: 0;
   transform: scale(0.92);
-  transition: opacity 240ms ease-out, transform 240ms ease-out;
+  transition: opacity 240ms var(--ease-out), transform 240ms var(--ease-out);
   pointer-events: none;
 }
 .nav-link:hover .nav-link-bg {
@@ -247,7 +254,7 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(244, 241, 234, 0.45);
+  color: rgba(244, 241, 234, 0.6);
   padding-bottom: 14px;
   margin-bottom: 4px;
   border-bottom: 1px solid rgba(244, 241, 234, 0.10);
@@ -324,58 +331,6 @@ a:focus-visible, button:focus-visible, input:focus-visible {
    la classe Tailwind hidden non venisse applicata (cache, hot-reload, ecc). */
 @media (max-width: 1023.98px) {
   .nav-cta-prenota { display: none !important; }
-}
-
-/* ===== CARD SWAP ===== */
-.card-swap-container {
-  position: relative;
-  perspective: 900px;
-  overflow: visible;
-  margin: 0 auto;
-}
-.card-swap-card {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 20px;
-  overflow: hidden;
-  background: rgba(244, 241, 234, 0.04);
-  background-blend-mode: luminosity;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  box-shadow: inset 0 1px 1px rgba(244, 241, 234, 0.12),
-              0 20px 50px -20px rgba(0, 0, 0, 0.55);
-  transform-style: preserve-3d;
-  will-change: transform;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  cursor: pointer;
-}
-.card-swap-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.2px;
-  background: linear-gradient(180deg,
-    rgba(244,241,234,0.45) 0%,
-    rgba(244,241,234,0.15) 20%,
-    rgba(244,241,234,0) 40%,
-    rgba(244,241,234,0) 60%,
-    rgba(244,241,234,0.15) 80%,
-    rgba(244,241,234,0.45) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-  z-index: 3;
-}
-@media (max-width: 768px) {
-  .card-swap-container { transform: scale(0.78); transform-origin: center; }
-}
-@media (max-width: 480px) {
-  .card-swap-container { transform: scale(0.6); transform-origin: center; }
 }
 
 /* ===== SCROLL STACK ===== */

@@ -128,7 +128,7 @@ export default function CtaFooter({ onOpenChat }: { onOpenChat?: () => void }) {
           </div>
           <div>
             <div
-              className="font-body uppercase text-foreground/45 mb-5"
+              className="font-body uppercase text-foreground/60 mb-5"
               style={{ fontSize: "11px", letterSpacing: "0.22em", fontWeight: 500 }}
             >
               STUDIO
@@ -168,7 +168,7 @@ export default function CtaFooter({ onOpenChat }: { onOpenChat?: () => void }) {
           </div>
           <div>
             <div
-              className="font-body uppercase text-foreground/45 mb-5"
+              className="font-body uppercase text-foreground/60 mb-5"
               style={{ fontSize: "11px", letterSpacing: "0.22em", fontWeight: 500 }}
             >
               TRATTAMENTI
@@ -186,7 +186,7 @@ export default function CtaFooter({ onOpenChat }: { onOpenChat?: () => void }) {
           </div>
           <div>
             <div
-              className="font-body uppercase text-foreground/45 mb-5"
+              className="font-body uppercase text-foreground/60 mb-5"
               style={{ fontSize: "11px", letterSpacing: "0.22em", fontWeight: 500 }}
             >
               CONTATTI
@@ -222,13 +222,13 @@ export default function CtaFooter({ onOpenChat }: { onOpenChat?: () => void }) {
         </div>
         <div className="max-w-7xl mx-auto pt-6 flex flex-col md:flex-row md:justify-between gap-3">
           <div
-            className="font-body uppercase text-foreground/45"
+            className="font-body uppercase text-foreground/60"
             style={{ fontSize: "11px", letterSpacing: "0.16em", fontWeight: 500 }}
           >
             © 2026 Studio Dentistico Fabio Barbato · P.IVA 00471820712
           </div>
           <div
-            className="font-body uppercase text-foreground/45"
+            className="font-body uppercase text-foreground/60"
             style={{ fontSize: "11px", letterSpacing: "0.16em", fontWeight: 500 }}
           >
             Privacy · Cookie · Note legali · Trasparenza tariffe

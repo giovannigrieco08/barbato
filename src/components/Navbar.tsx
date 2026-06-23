@@ -13,16 +13,24 @@ declare global {
 }
 
 export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
-  const [, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
   const [tone, setTone] = useState<"dark" | "light">("dark");
   const [active, setActive] = useState<string>("");
 
+  // Menu mobile aperto: blocca lo scroll del body e chiudi con Escape.
   useEffect(() => {
-    const f = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", f);
-    return () => window.removeEventListener("scroll", f);
-  }, []);
+    if (!menu) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   useEffect(() => {
     let raf = 0;
@@ -196,10 +204,13 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
         {menu && (
           <motion.div
             className="fixed inset-0 z-[60] flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu di navigazione"
             initial={{ y: "-100%" }}
             animate={{ y: 0 }}
-            exit={{ y: "-100%" }}
-            transition={{ duration: 0.65, ease: [0.7, 0, 0.3, 1] }}
+            exit={{ y: "-100%", transition: { duration: 0.34, ease: [0.32, 0.72, 0, 1] } }}
+            transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
             style={{ background: "#0A2E36" }}
           >
             <div
@@ -283,7 +294,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
                     exit={{ opacity: 0, y: -14 }}
                     transition={{
                       duration: 0.5,
-                      ease: [0.7, 0, 0.3, 1],
+                      ease: [0.16, 1, 0.3, 1],
                       delay: 0.16 + i * 0.05,
                     }}
                   >
@@ -302,7 +313,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
                 data-cursor="hover"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.7, 0, 0.3, 1], delay: 0.46 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.46 }}
                 style={{
                   color: "#F4F1EA",
                   padding: "16px 22px",

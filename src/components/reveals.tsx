@@ -97,7 +97,7 @@ export function RevealLines({
               }}
               initial={{ opacity: 0, y: 18 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration, ease: RV_EASE, delay: delay + i * stagger }}
+              transition={{ duration, ease: RV_EASE_OUT, delay: delay + i * stagger }}
             >
               {seg.t}
               {seg.space ? " " : ""}
@@ -235,7 +235,7 @@ export function RevealRule({
       style={{ ...baseStyle, willChange: "transform" }}
       initial={{ scaleX: 0 }}
       animate={inView ? { scaleX: 1 } : {}}
-      transition={{ duration, ease: RV_EASE, delay }}
+      transition={{ duration, ease: RV_EASE_OUT, delay }}
     />
   );
 }

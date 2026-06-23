@@ -110,14 +110,6 @@ export default function Treatments() {
       style={{ zIndex: 3 }}
     >
       <div className="max-w-3xl mx-auto px-6 md:px-10 pt-[15vh] pb-12 md:pb-16 text-center">
-        <div className="inline-flex liquid-glass rounded-full px-4 py-1.5 mb-7">
-          <span
-            className="font-body text-[11px] tracking-[0.22em] uppercase text-foreground/75"
-            style={{ fontWeight: 500 }}
-          >
-            I NOSTRI AMBITI
-          </span>
-        </div>
         <h2
           className="font-heading italic text-foreground"
           style={{

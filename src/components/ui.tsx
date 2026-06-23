@@ -33,13 +33,13 @@ export function BlurText({
           key={i}
           aria-hidden
           style={{ display: "inline-block", whiteSpace: "pre", willChange: "transform, filter, opacity" }}
-          initial={{ filter: "blur(10px)", opacity: 0, y: 50 }}
+          initial={{ filter: "blur(10px)", opacity: 0, y: 18 }}
           animate={
             inView
               ? {
                   filter: ["blur(10px)", "blur(5px)", "blur(0px)"],
                   opacity: [0, 0.5, 1],
-                  y: [50, -5, 0],
+                  y: [18, -3, 0],
                 }
               : {}
           }
@@ -98,6 +98,7 @@ export function MagneticButton({
   children,
   className = "",
   radius = 40,
+  style,
   ...rest
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null);
@@ -128,7 +129,9 @@ export function MagneticButton({
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      style={{ x: sx, y: sy }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+      style={{ ...style, x: sx, y: sy }}
       className={className}
       data-cursor="hover"
       {...rest}
@@ -206,95 +209,6 @@ export const Icon = {
   ),
 };
 
-// ————— DentalArchVideoPlaceholder —————
-// Animated dental arch (two arcs of teeth opening/closing).
-// Stand-in for the cinematic MP4 background of CtaFooter.
-export function DentalArchVideoPlaceholder() {
-  const teethTop = 14, teethBot = 14;
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0" style={{
-        background: "radial-gradient(ellipse at 50% 55%, #0f5463 0%, #0a2e36 45%, #061f25 100%)"
-      }}/>
-      <div className="absolute inset-0" style={{
-        background: "radial-gradient(circle at 50% 35%, rgba(244,241,234,0.12), transparent 40%)"
-      }}/>
-      <motion.svg
-        viewBox="0 0 1600 900"
-        className="absolute inset-0 w-full h-full"
-        preserveAspectRatio="xMidYMid slice"
-        aria-hidden
-      >
-        <defs>
-          <radialGradient id="tooth" cx="50%" cy="30%" r="70%">
-            <stop offset="0%" stopColor="#FBF7EC"/>
-            <stop offset="60%" stopColor="#E5DDC7"/>
-            <stop offset="100%" stopColor="#8A7F63"/>
-          </radialGradient>
-          <linearGradient id="gum" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6B1E2A"/>
-            <stop offset="100%" stopColor="#2A0A10"/>
-          </linearGradient>
-          <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
-            <feGaussianBlur stdDeviation="0.6"/>
-          </filter>
-        </defs>
-        <motion.g
-          animate={{ y: [0, -30, 0] }}
-          transition={{ duration: 5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-        >
-          <path d="M 300 290 Q 800 140 1300 290 Q 1300 210 800 90 Q 300 210 300 290 Z" fill="url(#gum)" opacity="0.85"/>
-          {Array.from({ length: teethTop }).map((_, i) => {
-            const t = i / (teethTop - 1);
-            const angle = (t - 0.5) * Math.PI * 0.85;
-            const cx = 800 + Math.sin(angle) * 520;
-            const cy = 290 - Math.cos(angle) * 160;
-            const w = 56 + Math.abs(t - 0.5) * 30;
-            const h = 120 - Math.abs(t - 0.5) * 30;
-            return (
-              <g key={`u${i}`} transform={`translate(${cx} ${cy}) rotate(${(angle * 180 / Math.PI)})`}>
-                <rect x={-w / 2} y={0} width={w} height={h} rx={w * 0.35} fill="url(#tooth)" filter="url(#soft)"/>
-                <rect x={-w / 2 + 3} y={4} width={w * 0.35} height={h * 0.55} rx={w * 0.2} fill="#FDFBF3" opacity="0.55"/>
-              </g>
-            );
-          })}
-        </motion.g>
-        <motion.g
-          animate={{ y: [0, 30, 0] }}
-          transition={{ duration: 5, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-        >
-          <path d="M 300 610 Q 800 760 1300 610 Q 1300 690 800 810 Q 300 690 300 610 Z" fill="url(#gum)" opacity="0.85"/>
-          {Array.from({ length: teethBot }).map((_, i) => {
-            const t = i / (teethBot - 1);
-            const angle = (t - 0.5) * Math.PI * 0.85;
-            const cx = 800 + Math.sin(angle) * 520;
-            const cy = 610 + Math.cos(angle) * 160;
-            const w = 52 + Math.abs(t - 0.5) * 28;
-            const h = 110 - Math.abs(t - 0.5) * 30;
-            return (
-              <g key={`l${i}`} transform={`translate(${cx} ${cy}) rotate(${-(angle * 180 / Math.PI)})`}>
-                <rect x={-w / 2} y={-h} width={w} height={h} rx={w * 0.35} fill="url(#tooth)" filter="url(#soft)"/>
-                <rect x={-w / 2 + 3} y={-h + 4} width={w * 0.35} height={h * 0.55} rx={w * 0.2} fill="#FDFBF3" opacity="0.55"/>
-              </g>
-            );
-          })}
-        </motion.g>
-        <motion.ellipse
-          cx="800" cy="450" rx="600" ry="60"
-          fill="rgba(244,241,234,0.08)"
-          animate={{ cx: [500, 1100, 500] }}
-          transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
-        />
-      </motion.svg>
-      <div className="absolute inset-0 pointer-events-none" style={{
-        opacity: 0.06,
-        mixBlendMode: "overlay",
-        backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/></svg>\")"
-      }}/>
-    </div>
-  );
-}
-
 // ————— EditorialPlaceholder —————
 type EditorialPlaceholderProps = {
   label: string;
@@ -303,22 +217,29 @@ type EditorialPlaceholderProps = {
   style?: React.CSSProperties;
 };
 export function EditorialPlaceholder({ label, tone = "teal", className = "", style = {} }: EditorialPlaceholderProps) {
-  const palettes: Record<string, { bg: string; stripe: string; ink: string }> = {
-    teal: { bg: "#0F4754", stripe: "#0A2E36", ink: "rgba(244,241,234,0.35)" },
-    deep: { bg: "#0A2E36", stripe: "#061F25", ink: "rgba(244,241,234,0.32)" },
-    warm: { bg: "#1a3a44", stripe: "#0f2a32", ink: "rgba(244,241,234,0.4)" },
-    portrait: { bg: "#2a2a2a", stripe: "#1c1c1c", ink: "rgba(244,241,234,0.35)" },
+  // Lastra duotone in tinte brand + luce morbida dall'alto-sinistra: legge
+  // come una superficie fotografata trattata, non come riempimento generico.
+  // Drop-in: sostituire con <Image fill> quando le foto dello studio ci sono.
+  const palettes: Record<string, { from: string; to: string; ink: string }> = {
+    teal: { from: "#13525F", to: "#0A2E36", ink: "rgba(244,241,234,0.55)" },
+    deep: { from: "#0F4754", to: "#061F25", ink: "rgba(244,241,234,0.5)" },
+    warm: { from: "#1E3F49", to: "#0F2A32", ink: "rgba(244,241,234,0.6)" },
+    portrait: { from: "#34343B", to: "#1A1A1F", ink: "rgba(244,241,234,0.55)" },
   };
   const p = palettes[tone] || palettes.teal;
   return (
     <div
       className={"relative w-full h-full overflow-hidden " + className}
-      style={{
-        backgroundColor: p.bg,
-        backgroundImage: `repeating-linear-gradient(135deg, ${p.stripe} 0 2px, transparent 2px 14px)`,
-        ...style,
-      }}
+      style={{ background: `linear-gradient(150deg, ${p.from} 0%, ${p.to} 100%)`, ...style }}
     >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 95% at 18% 10%, rgba(244,241,234,0.10), transparent 55%)",
+        }}
+      />
       <div className="absolute inset-0 flex items-end p-5">
         <span style={{
           fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",

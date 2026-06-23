@@ -55,12 +55,10 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
   }, [inView]);
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className="liquid-glass rounded-3xl p-5 sm:p-6 relative chat-mockup"
       style={{ minHeight: "min(70svh, 580px)" }}
-      animate={{ y: [0, -8, 0] }}
-      transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
     >
       <div className="flex items-center justify-between pb-4 border-b border-foreground/10">
         <div className="flex items-center gap-3">
@@ -156,7 +154,7 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
           <Icon.ArrowUp size={16} />
         </button>
       </form>
-    </motion.div>
+    </div>
   );
 }
 

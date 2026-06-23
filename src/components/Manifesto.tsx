@@ -443,7 +443,7 @@ export default function Manifesto() {
           box-shadow: 0 20px 50px rgba(0, 0, 0, 0);
           opacity: 0;
           pointer-events: none;
-          will-change: top, bottom, left, right, opacity;
+          will-change: opacity;
         }
 
         .manifesto-hero-text {
@@ -475,7 +475,7 @@ export default function Manifesto() {
         .manifesto-hero-headline {
           margin: 0;
           font-family: 'Instrument Serif', serif;
-          font-size: clamp(3.5rem, 8.5vw, 7.5rem);
+          font-size: clamp(3.5rem, 8vw, 6.5rem);
           line-height: 0.96;
           letter-spacing: -0.025em;
           color: ${M_BONE};

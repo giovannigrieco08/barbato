@@ -31,6 +31,26 @@ export default function FloatingChat({
     bodyRef.current?.scrollTo({ top: 1e6, behavior: "smooth" });
   }, [messages, pending]);
 
+  // Pannello aperto: chiudi con Escape; blocca lo scroll del body solo quando
+  // il pannello è a tutto schermo (mobile), non quando è un riquadro desktop.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const fullScreen = window.matchMedia("(max-width: 639px)").matches;
+    let prev = "";
+    if (fullScreen) {
+      prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (fullScreen) document.body.style.overflow = prev;
+    };
+  }, [open, setOpen]);
+
   useEffect(() => {
     if (open && initialDraft && typeof initialDraft === "string" && initialDraft.trim()) {
       const q = initialDraft.trim();
@@ -114,6 +134,9 @@ export default function FloatingChat({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Smile Assistant"
             className="liquid-glass-strong overflow-hidden flex flex-col chat-panel"
             style={{
               position: "fixed",
@@ -123,6 +146,7 @@ export default function FloatingChat({
               width: "min(400px, calc(100vw - 32px))",
               height: "min(600px, calc(100svh - 120px))",
               borderRadius: 24,
+              transformOrigin: "bottom right",
             }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-foreground/10">

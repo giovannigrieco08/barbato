@@ -95,6 +95,14 @@ export default function ScrollStack({
     const transformsCache = new Map<number, Transform>();
     let stackCompleted = false;
 
+    // Il blur per-frame su immagini full-bleed è paint-costoso: lo disattivo
+    // sui viewport piccoli, dove l'effetto è impercettibile ma il costo no.
+    const effBlur =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 768px)").matches
+        ? 0
+        : blurAmount;
+
     // Static initial card setup
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i];
@@ -140,7 +148,7 @@ export default function ScrollStack({
 
       // Pre-compute topCardIndex per il blur (1 sola passata).
       let topCardIndex = 0;
-      if (blurAmount) {
+      if (effBlur) {
         for (let j = 0; j < cards.length; j++) {
           const jTriggerStart =
             cardOffsets[j] - stackPositionPx - itemStackDistance * j;
@@ -161,8 +169,8 @@ export default function ScrollStack({
         const rotation = rotationAmount ? i * rotationAmount * scaleProgress : 0;
 
         let blur = 0;
-        if (blurAmount && i < topCardIndex) {
-          blur = (topCardIndex - i) * blurAmount;
+        if (effBlur && i < topCardIndex) {
+          blur = (topCardIndex - i) * effBlur;
         }
 
         let translateY = 0;
