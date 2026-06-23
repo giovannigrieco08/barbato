@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Icon, MagneticButton, EASE } from "@/components/ui";
-import GlassSurface from "@/components/GlassSurface";
 
 declare global {
   interface Window {
@@ -17,6 +16,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
   const [, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
   const [tone, setTone] = useState<"dark" | "light">("dark");
+  const [active, setActive] = useState<string>("");
 
   useEffect(() => {
     const f = () => setScrolled(window.scrollY > 20);
@@ -26,8 +26,8 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
 
   useEffect(() => {
     let raf = 0;
+    let lastRun = -Infinity;
     const updateTone = () => {
-      raf = 0;
       const navProbeY = 56;
       const x = Math.max(2, window.innerWidth / 2);
       const el = document.elementFromPoint(x, navProbeY + 60);
@@ -43,9 +43,16 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
       const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
       setTone(luma > 160 ? "light" : "dark");
     };
+    // Throttle a ~8 letture/sec: getComputedStyle + elementFromPoint forzano
+    // un reflow sincrono, inutile farlo a 60fps. rAF resta come scheduler.
     const onScroll = () => {
       if (raf) return;
-      raf = requestAnimationFrame(updateTone);
+      raf = requestAnimationFrame((t) => {
+        raf = 0;
+        if (t - lastRun < 120) return;
+        lastRun = t;
+        updateTone();
+      });
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
@@ -64,6 +71,27 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
     ["Dr. Barbato", "#dottore"],
     ["Contatti", "#contatti"],
   ];
+
+  // Sezione attiva via IntersectionObserver (non per-frame → economico).
+  // Marca il link corrispondente alla sezione che attraversa la fascia
+  // centrale del viewport, così la navbar si legge come vera navigazione.
+  useEffect(() => {
+    const els = links
+      .map(([, href]) => document.getElementById(href.slice(1)))
+      .filter((el): el is HTMLElement => el !== null);
+    if (!els.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActive(`#${e.target.id}`);
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px", threshold: 0 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onLinkClick = (e: React.MouseEvent, href: string) => {
     const lenis = window.__lenis;
@@ -117,33 +145,31 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
         </a>
 
         <div className="hidden lg:flex flex-1 justify-center min-w-0">
-          <GlassSurface
-            borderRadius={999}
-            width="fit-content"
-            height="fit-content"
-            className="glass-bar rounded-full"
-          >
-          <nav className="rounded-full px-2 py-1.5 flex items-center whitespace-nowrap">
-            {links.map(([label, href]) => (
-              <a
-                key={href}
-                href={href}
-                onClick={(e) => onLinkClick(e, href)}
-                className="relative group font-body font-medium hover:text-foreground transition-colors whitespace-nowrap"
-                data-cursor="hover"
-                style={{
-                  color: fgDim,
-                  padding: "8px 14px",
-                  fontSize: "0.875rem",
-                  letterSpacing: "0.005em",
-                }}
-              >
-                {label}
-                <span className="absolute left-3 right-3 -bottom-0.5 h-px bg-primary origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-              </a>
-            ))}
+          <nav className="glass-elevated rounded-full px-1.5 py-1.5 flex items-center whitespace-nowrap">
+            {links.map(([label, href]) => {
+              const isActive = active === href;
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={(e) => onLinkClick(e, href)}
+                  className="nav-link font-body font-medium whitespace-nowrap"
+                  data-cursor="hover"
+                  data-active={isActive ? "1" : undefined}
+                  style={{
+                    color: isActive ? fg : fgDim,
+                    padding: "8px 16px",
+                    fontSize: "0.875rem",
+                    letterSpacing: "0.005em",
+                    borderRadius: 999,
+                  }}
+                >
+                  <span className="nav-link-bg" aria-hidden="true" />
+                  <span style={{ position: "relative", zIndex: 1 }}>{label}</span>
+                </a>
+              );
+            })}
           </nav>
-          </GlassSurface>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 ml-auto lg:ml-0">
@@ -230,10 +256,18 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
             </div>
 
             <div
-              className="flex flex-col items-center px-6"
-              style={{ paddingTop: "8vh" }}
+              className="flex flex-col px-6"
+              style={{ paddingTop: "5vh" }}
             >
-              <nav className="flex flex-col items-center" style={{ gap: "0.15rem" }}>
+              <motion.div
+                className="menu-eyebrow"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.12 }}
+              >
+                Naviga
+              </motion.div>
+              <nav className="w-full flex flex-col">
                 {links.map(([l, h], i) => (
                   <motion.a
                     key={h}
@@ -242,27 +276,19 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
                       setMenu(false);
                       onLinkClick(e, h);
                     }}
-                    className="font-heading menu-link"
+                    className="menu-row font-heading"
                     data-cursor="hover"
-                    initial={{ opacity: 0, y: 24 }}
+                    initial={{ opacity: 0, y: 22 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -16 }}
+                    exit={{ opacity: 0, y: -14 }}
                     transition={{
-                      duration: 0.55,
+                      duration: 0.5,
                       ease: [0.7, 0, 0.3, 1],
-                      delay: 0.18 + i * 0.06,
-                    }}
-                    style={{
-                      color: "#F4F1EA",
-                      fontSize: "clamp(2.5rem, 12vw, 4.25rem)",
-                      lineHeight: 1.05,
-                      letterSpacing: "-0.025em",
-                      fontStyle: "normal",
-                      textAlign: "center",
-                      whiteSpace: "nowrap",
+                      delay: 0.16 + i * 0.05,
                     }}
                   >
-                    {l}
+                    <span>{l}</span>
+                    <Icon.ArrowUpRight size={22} className="menu-row-arrow" />
                   </motion.a>
                 ))}
               </nav>
@@ -272,23 +298,22 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
                   setMenu(false);
                   onOpenChat?.();
                 }}
-                className="liquid-glass-gold rounded-full inline-flex items-center justify-center gap-2"
+                className="glass-accent rounded-full flex w-full items-center justify-center gap-2"
                 data-cursor="hover"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.7, 0, 0.3, 1], delay: 0.46 }}
                 style={{
                   color: "#F4F1EA",
-                  padding: "12px 22px",
-                  fontSize: "14px",
+                  padding: "16px 22px",
+                  fontSize: "15px",
                   fontFamily: "'Barlow', sans-serif",
                   fontWeight: 500,
-                  border: "1px solid rgba(143,200,196,0.45)",
-                  marginTop: "1.5rem",
+                  marginTop: "2rem",
                 }}
               >
                 <span>Prenota visita</span>
-                <Icon.ArrowUpRight size={14} className="hero-cta-arrow" />
+                <Icon.ArrowUpRight size={16} className="hero-cta-arrow" />
               </motion.button>
             </div>
 
