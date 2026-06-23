@@ -81,8 +81,8 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
         <div className="flex items-center gap-2">
           <motion.span
             className="w-2 h-2 rounded-full bg-primary"
-            animate={{ opacity: [0.4, 1, 0.4] }}
-            transition={{ duration: 1.6, repeat: Infinity }}
+            animate={{ opacity: [0.55, 1, 0.55] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           />
           <span
             className="font-body uppercase text-foreground/60"
@@ -108,7 +108,7 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
                   ? "bg-primary text-[#0A2E36] rounded-2xl rounded-br-md max-w-[78%] font-body"
                   : "liquid-glass rounded-2xl rounded-bl-md max-w-[82%] font-body text-foreground"
               }
-              style={{ padding: "12px 16px", fontSize: "0.875rem", lineHeight: 1.55 }}
+              style={{ padding: "12px 16px", fontSize: "0.875rem", lineHeight: 1.55, overflowWrap: "anywhere" }}
             >
               {m.text}
             </div>
@@ -141,6 +141,8 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Scrivi la tua domanda…"
+          aria-label="Scrivi la tua domanda"
+          maxLength={500}
           className="flex-1 liquid-glass rounded-full px-4 py-3 font-body text-sm text-foreground placeholder:text-foreground/45 bg-transparent outline-none focus:ring-2 focus:ring-primary/40"
           data-cursor="hover"
         />
@@ -181,7 +183,7 @@ export default function SmileAssistant({
         <div className="w-full max-w-7xl mx-auto grid lg:grid-cols-[45%_1fr] gap-[6vw] items-center">
           <div>
             <div className="inline-flex liquid-glass-gold rounded-full px-4 py-1.5 items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
               <span
                 className="font-body text-[11px] tracking-[0.22em] uppercase text-foreground/85"
                 style={{ fontWeight: 500 }}

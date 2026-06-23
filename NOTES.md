@@ -31,7 +31,8 @@ Tutti i 13 componenti del prototipo sono portati 1:1 in TypeScript, con tutti i 
 - `next.config.ts` — Cache headers immutable per `/videos /images /fonts /_next/static`, security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy), AVIF/WebP formats, deviceSizes/imageSizes per `next/image`
 - `src/app/sitemap.ts` + `src/app/robots.ts`
 - `src/components/providers/SmoothScrollProvider.tsx` — Lenis dynamic-imported con bridge GSAP ticker, skip iOS+reduced-motion+touch
-- `src/components/ui.tsx` — primitives portati (BlurText, FadeUp, MagneticButton, MonoMark, Icon×10, EditorialPlaceholder, DentalArchVideoPlaceholder)
+- `src/components/ui.tsx` — primitives portati (BlurText, FadeUp, MagneticButton, MonoMark, Icon×10, EditorialPlaceholder)
+  - _Nota review: `CardSwap` e `DentalArchVideoPlaceholder` rimossi (codice morto) nella revisione design/motion successiva._
 - `src/components/reveals.tsx` — RevealLines+tokenize, RevealText, RevealParagraph, RevealRule, ParallaxImage
 
 ### Componenti con dynamic GSAP import (Phase 11+12)

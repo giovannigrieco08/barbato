@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { EditorialPlaceholder } from "@/components/ui";
+import Image from "next/image";
 
 const G_INK = "#0A2E36";
 const G_BONE = "#F4F1EA";
@@ -32,6 +32,8 @@ type ImgItem = {
   kind: "img";
   id: string;
   caption: string;
+  src: string;
+  alt: string;
   tone: "teal" | "deep" | "warm";
   w: number;
   h: number;
@@ -48,9 +50,9 @@ type QuoteItem = {
 type TrackItem = ImgItem | QuoteItem;
 
 const TRACK: TrackItem[] = [
-  { kind: "img", id: "g1", caption: "RECEPTION · 2024", tone: "teal", w: 280, h: 360, yVh: -22, vy: -3 },
-  { kind: "img", id: "g2", caption: "SALA OPERATIVA · 2024", tone: "deep", w: 520, h: 660, yVh: 8, vy: -6 },
-  { kind: "img", id: "g3", caption: "STUDIO TECNICO · 2024", tone: "warm", w: 320, h: 420, yVh: -14, vy: 3 },
+  { kind: "img", id: "g1", caption: "RECEPTION · 2024", src: "/images/studio/reception.jpg", alt: "Reception dello studio: bancone in rovere su parete teal, luce naturale", tone: "teal", w: 280, h: 360, yVh: -22, vy: -3 },
+  { kind: "img", id: "g2", caption: "SALA OPERATIVA · 2024", src: "/images/studio/sala-operativa.jpg", alt: "Sala operativa con riunito odontoiatrico e vetrine in legno", tone: "deep", w: 520, h: 660, yVh: 8, vy: -6 },
+  { kind: "img", id: "g3", caption: "STUDIO TECNICO · 2024", src: "/images/studio/studio-tecnico.jpg", alt: "Studio tecnico con scanner e modelli in gesso su banco in legno", tone: "warm", w: 320, h: 420, yVh: -14, vy: 3 },
   {
     kind: "quote",
     id: "q1",
@@ -65,9 +67,9 @@ const TRACK: TrackItem[] = [
     widthPx: 380,
     yVh: -8,
   },
-  { kind: "img", id: "g4", caption: "AREA STERILIZZAZIONE · 2024", tone: "deep", w: 260, h: 340, yVh: 20, vy: -3 },
-  { kind: "img", id: "g5", caption: "TECNOLOGIA · 2024", tone: "teal", w: 580, h: 720, yVh: -4, vy: -5 },
-  { kind: "img", id: "g6", caption: "DETTAGLIO · 2024", tone: "warm", w: 320, h: 420, yVh: 18, vy: 2 },
+  { kind: "img", id: "g4", caption: "AREA STERILIZZAZIONE · 2024", src: "/images/studio/sterilizzazione.jpg", alt: "Area sterilizzazione con autoclave e strumentario imbustato", tone: "deep", w: 260, h: 340, yVh: 20, vy: -3 },
+  { kind: "img", id: "g5", caption: "TECNOLOGIA · 2024", src: "/images/studio/tecnologia.jpg", alt: "Tomografo cone beam per diagnostica 3D accanto alle vetrate", tone: "teal", w: 580, h: 720, yVh: -4, vy: -5 },
+  { kind: "img", id: "g6", caption: "DETTAGLIO · 2024", src: "/images/studio/dettaglio.jpg", alt: "Dettaglio d'ambiente: applique in ottone e nicchia in rovere", tone: "warm", w: 320, h: 420, yVh: 18, vy: 2 },
   {
     kind: "quote",
     id: "q2",
@@ -80,8 +82,8 @@ const TRACK: TrackItem[] = [
     widthPx: 360,
     yVh: -16,
   },
-  { kind: "img", id: "g7", caption: "INGRESSO · 2024", tone: "teal", w: 300, h: 380, yVh: -20, vy: -2 },
-  { kind: "img", id: "g8", caption: "POLTRONA · 2024", tone: "deep", w: 460, h: 580, yVh: 6, vy: 3 },
+  { kind: "img", id: "g7", caption: "INGRESSO · 2024", src: "/images/studio/ingresso.jpg", alt: "Ingresso con porta a vetro satinato e boiserie in rovere e teal", tone: "teal", w: 300, h: 380, yVh: -20, vy: -2 },
+  { kind: "img", id: "g8", caption: "POLTRONA · 2024", src: "/images/studio/poltrona.jpg", alt: "Poltrona odontoiatrica in pelle avorio nella sala trattamenti", tone: "deep", w: 460, h: 580, yVh: 6, vy: 3 },
 ];
 
 const ITEM_GAP = 64;
@@ -186,8 +188,14 @@ function GalleriaStudioMobile() {
                     boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
                   }}
                 >
-                  <div style={{ width: "100%", height: "100%", filter: "saturate(0.85) contrast(1.05)" }}>
-                    <EditorialPlaceholder label={it.caption.split(" · ")[0]} tone={it.tone} />
+                  <div style={{ position: "relative", width: "100%", height: "100%", filter: "saturate(0.92) contrast(1.04)" }}>
+                    <Image
+                      src={it.src}
+                      alt={it.alt}
+                      fill
+                      sizes="64vw"
+                      className="object-cover"
+                    />
                   </div>
                 </div>
               </figure>
@@ -425,7 +433,6 @@ export default function GalleriaStudio() {
       id="studio"
       ref={sectionRef}
       className="gs-section"
-      data-screen-label="04 Galleria Studio"
     >
       <div ref={stickyRef} className="gs-sticky">
         <div className="gs-bg gs-bg-ink" aria-hidden="true">
@@ -464,7 +471,13 @@ export default function GalleriaStudio() {
                 >
                   <figcaption className="gs-img-caption">{it.caption}</figcaption>
                   <div className="gs-item-inner">
-                    <EditorialPlaceholder label={it.caption.split(" · ")[0]} tone={it.tone} />
+                    <Image
+                      src={it.src}
+                      alt={it.alt}
+                      fill
+                      sizes="(max-width: 1023px) 70vw, 600px"
+                      className="object-cover"
+                    />
                   </div>
                 </figure>
               );
@@ -599,7 +612,7 @@ export default function GalleriaStudio() {
         .gs-item-img .gs-item-inner {
           height: 110%;
           margin-top: -5%;
-          filter: saturate(0.85) contrast(1.05);
+          filter: saturate(0.92) contrast(1.04);
         }
         .gs-img-caption {
           position: absolute;

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+
+# Original high-res asset drops (optimized versions live in /public)
+/original-assets

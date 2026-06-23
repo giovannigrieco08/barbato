@@ -26,6 +26,7 @@ export default function FloatingChat({
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 1e6, behavior: "smooth" });
@@ -45,9 +46,16 @@ export default function FloatingChat({
       prev = document.body.style.overflow;
       document.body.style.overflow = "hidden";
     }
+    // Attivazione: porta il cursore nell'input ad apertura, ma solo con
+    // puntatore fine (desktop) — su touch evitiamo di forzare la tastiera.
+    let focusTimer: ReturnType<typeof setTimeout> | undefined;
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      focusTimer = setTimeout(() => inputRef.current?.focus(), 260);
+    }
     return () => {
       window.removeEventListener("keydown", onKey);
       if (fullScreen) document.body.style.overflow = prev;
+      if (focusTimer) clearTimeout(focusTimer);
     };
   }, [open, setOpen]);
 
@@ -162,8 +170,8 @@ export default function FloatingChat({
                   <div className="flex items-center gap-1.5 mt-1">
                     <motion.span
                       className="w-1.5 h-1.5 rounded-full bg-primary"
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ duration: 1.6, repeat: Infinity }}
+                      animate={{ opacity: [0.55, 1, 0.55] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
                     />
                     <span
                       className="font-body uppercase text-foreground/55"
@@ -176,7 +184,7 @@ export default function FloatingChat({
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="text-foreground/60 hover:text-foreground"
+                className="text-foreground/60 hover:text-foreground transition-transform active:scale-90"
                 aria-label="Chiudi"
               >
                 <Icon.X size={18} />
@@ -198,7 +206,7 @@ export default function FloatingChat({
                         ? "bg-primary text-[#0A2E36] rounded-2xl rounded-br-md max-w-[85%] font-body"
                         : "liquid-glass rounded-2xl rounded-bl-md max-w-[85%] font-body text-foreground"
                     }
-                    style={{ padding: "10px 14px", fontSize: "0.875rem", lineHeight: 1.55 }}
+                    style={{ padding: "10px 14px", fontSize: "0.875rem", lineHeight: 1.55, overflowWrap: "anywhere" }}
                   >
                     {m.text}
                   </div>
@@ -246,9 +254,12 @@ export default function FloatingChat({
             >
               <div className="flex-1 liquid-glass rounded-full px-4 py-2.5 flex items-center">
                 <input
+                  ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Scrivi la tua domanda…"
+                  aria-label="Scrivi la tua domanda"
+                  maxLength={500}
                   className="bg-transparent outline-none w-full font-body text-sm text-foreground placeholder:text-foreground/45"
                 />
               </div>

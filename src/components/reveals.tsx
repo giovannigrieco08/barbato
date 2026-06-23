@@ -3,7 +3,6 @@
 import { motion, useInView, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 
-const RV_EASE = [0.7, 0, 0.2, 1] as const;
 const RV_EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 // Tokenize string into segments {t, em, space}.
@@ -282,4 +281,4 @@ export function ParallaxImage({
   );
 }
 
-export { RV_EASE, RV_EASE_OUT };
+export { RV_EASE_OUT };

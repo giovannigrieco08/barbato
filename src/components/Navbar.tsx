@@ -190,7 +190,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
             <Icon.ArrowUpRight size={16} className="hero-cta-arrow" />
           </MagneticButton>
           <button
-            className="lg:hidden liquid-glass rounded-full w-11 h-11 flex items-center justify-center"
+            className="lg:hidden liquid-glass rounded-full w-11 h-11 flex items-center justify-center transition-transform active:scale-95"
             onClick={() => setMenu(true)}
             aria-label="Menu"
             style={{ color: fg }}
@@ -252,7 +252,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
               </a>
               <button
                 onClick={() => setMenu(false)}
-                className="rounded-full flex items-center justify-center"
+                className="rounded-full flex items-center justify-center transition-transform active:scale-95"
                 aria-label="Chiudi menu"
                 data-cursor="hover"
                 style={{

@@ -280,7 +280,6 @@ export default function Manifesto() {
       ref={sectionRef}
       className="manifesto-section"
       style={{ background: M_INK, position: "relative", zIndex: 2 }}
-      data-screen-label="01 Hero + Manifesto"
       data-sticky-overlap="A"
     >
       <div ref={stickyRef} className="manifesto-sticky">
@@ -318,11 +317,11 @@ export default function Manifesto() {
             muted
             playsInline
             preload="metadata"
-            poster="/videos/hero-poster.jpg"
+            poster="/videos/hero-studio-poster.jpg"
             aria-hidden="true"
           >
-            <source src="/videos/hero-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
-            <source src="/videos/hero-desktop.mp4" type="video/mp4" />
+            <source src="/videos/hero-studio-mobile.mp4" type="video/mp4" media="(max-width: 767px)" />
+            <source src="/videos/hero-studio-desktop.mp4" type="video/mp4" />
           </video>
           <div className="manifesto-window-overlay" aria-hidden="true" />
         </div>
@@ -426,10 +425,15 @@ export default function Manifesto() {
           object-position: center;
           display: block;
         }
+        /* Ombre cinematografiche NEUTRE (nessuna tinta verde): vignettatura
+           ai bordi per profondità + scrim alto/basso per leggibilità del
+           titolo bianco. I colori naturali caldi del video restano intatti. */
         .manifesto-window-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(180deg, rgba(10,46,54,0.15) 0%, rgba(10,46,54,0.0) 30%, rgba(10,46,54,0.0) 70%, rgba(10,46,54,0.35) 100%);
+          background:
+            radial-gradient(125% 105% at 50% 48%, transparent 52%, rgba(0,0,0,0.36) 100%),
+            linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 24%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.46) 100%);
           pointer-events: none;
         }
 
@@ -480,7 +484,7 @@ export default function Manifesto() {
           letter-spacing: -0.025em;
           color: ${M_BONE};
           font-weight: 400;
-          text-shadow: 0 2px 20px rgba(0,0,0,0.35);
+          text-shadow: 0 2px 12px rgba(0,0,0,0.45), 0 6px 44px rgba(0,0,0,0.40);
         }
         .manifesto-hero-line-1, .manifesto-hero-line-2 { display: block; }
         .manifesto-hero-line-2 { font-style: italic; }
