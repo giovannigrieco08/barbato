@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Icon, MonoMark, EASE } from "@/components/ui";
+import GlassSurface from "@/components/GlassSurface";
 
 type ChatMsg = { role: "bot" | "user"; text: string };
 
@@ -114,7 +115,7 @@ export default function FloatingChat({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 20 }}
             transition={{ type: "spring", stiffness: 200, damping: 22 }}
-            className="liquid-glass-strong overflow-hidden flex flex-col chat-panel"
+            className="chat-panel"
             style={{
               position: "fixed",
               zIndex: 65,
@@ -125,6 +126,14 @@ export default function FloatingChat({
               borderRadius: 24,
             }}
           >
+          <GlassSurface
+            width="100%"
+            height="100%"
+            borderRadius={24}
+            className="glass-panel"
+            style={{ width: "100%", height: "100%" }}
+          >
+            <div className="flex flex-col w-full h-full overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-foreground/10">
               <div className="flex items-center gap-3">
                 <MonoMark size={28} />
@@ -238,6 +247,8 @@ export default function FloatingChat({
                 <Icon.ArrowUp size={16} />
               </button>
             </form>
+            </div>
+          </GlassSurface>
           </motion.div>
         )}
       </AnimatePresence>

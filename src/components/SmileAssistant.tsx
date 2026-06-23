@@ -4,6 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FadeUp, Icon, MonoMark, EASE } from "@/components/ui";
 import { RevealLines, RevealParagraph } from "@/components/reveals";
+import GlassSurface from "@/components/GlassSurface";
 
 type ChatMsg = { role: "bot" | "user"; text: string };
 
@@ -57,11 +58,18 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
   return (
     <motion.div
       ref={ref}
-      className="liquid-glass rounded-3xl p-5 sm:p-6 relative chat-mockup"
-      style={{ minHeight: "min(70svh, 580px)" }}
+      className="relative chat-mockup"
       animate={{ y: [0, -8, 0] }}
       transition={{ duration: 4, ease: "easeInOut", repeat: Infinity }}
     >
+      <GlassSurface
+        width="100%"
+        height="auto"
+        borderRadius={24}
+        className="glass-panel rounded-3xl"
+        style={{ width: "100%", minHeight: "min(70svh, 580px)" }}
+      >
+      <div className="p-5 sm:p-6">
       <div className="flex items-center justify-between pb-4 border-b border-foreground/10">
         <div className="flex items-center gap-3">
           <MonoMark size={28} />
@@ -156,6 +164,8 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
           <Icon.ArrowUp size={16} />
         </button>
       </form>
+      </div>
+      </GlassSurface>
     </motion.div>
   );
 }

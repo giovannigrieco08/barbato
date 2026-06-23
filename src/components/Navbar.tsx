@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Icon, MagneticButton, EASE } from "@/components/ui";
+import GlassSurface from "@/components/GlassSurface";
 
 declare global {
   interface Window {
@@ -116,7 +117,13 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
         </a>
 
         <div className="hidden lg:flex flex-1 justify-center min-w-0">
-          <nav className="liquid-glass rounded-full px-2 py-1.5 flex items-center whitespace-nowrap">
+          <GlassSurface
+            borderRadius={999}
+            width="fit-content"
+            height="fit-content"
+            className="glass-bar rounded-full"
+          >
+          <nav className="rounded-full px-2 py-1.5 flex items-center whitespace-nowrap">
             {links.map(([label, href]) => (
               <a
                 key={href}
@@ -136,6 +143,7 @@ export default function Navbar({ onOpenChat }: { onOpenChat?: () => void }) {
               </a>
             ))}
           </nav>
+          </GlassSurface>
         </div>
 
         <div className="flex items-center gap-3 shrink-0 ml-auto lg:ml-0">
