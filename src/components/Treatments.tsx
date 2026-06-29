@@ -26,7 +26,7 @@ const items: Item[] = [
     title: "Ortodonzia invisibile",
     desc: "Allineatori trasparenti per adulti e adolescenti. Risultati visibili senza dover sorridere diversamente.",
     photo: {
-      src: "/images/studio/ortodonzia-allineatore.jpg",
+      src: "/images/studio/ortodonzia-allineatore-trasparente.jpg",
       alt: "Allineatore ortodontico trasparente tenuto tra le dita, primo piano",
     },
   },
@@ -35,7 +35,7 @@ const items: Item[] = [
     title: "Estetica del sorriso",
     desc: "Faccette in ceramica integrale, sbiancamento professionale, ricostruzioni minimamente invasive.",
     photo: {
-      src: "/images/studio/estetica-faccette.jpg",
+      src: "/images/studio/estetica-scala-colore-sorriso.jpg",
       alt: "Scala colore dentale accostata a un sorriso per la scelta della tonalità",
     },
   },
