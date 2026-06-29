@@ -6,8 +6,15 @@ import { useEffect, useRef, useState } from "react";
  * Splash screen — ring drawn via conic-gradient mask + wordmark fade-up.
  * Exits after `duration`ms or on click. Respects prefers-reduced-motion.
  */
+// Single source of truth for the slide-out duration (mirrors the CSS
+// transition on .splash-root[data-exiting="1"], ~1.2s). The exit timeout is
+// derived from this so total lifetime stays ≤ ~2s without magic numbers.
+const SLIDE_MS = 1200;
+// Reduced-motion users get a short opacity crossfade instead of the slide.
+const FADE_MS = 320;
+
 export default function Splash({
-  duration = 1500,
+  duration = 1000,
   onComplete,
 }: {
   duration?: number;
@@ -15,6 +22,7 @@ export default function Splash({
 }) {
   const [mounted, setMounted] = useState(true);
   const [exiting, setExiting] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -38,7 +46,8 @@ export default function Splash({
 
     const reduced =
       typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    setReducedMotion(reduced);
     const waitMs = reduced ? Math.round(duration / 2) : duration;
     timers.current.push(setTimeout(() => setExiting(true), waitMs));
 
@@ -52,6 +61,9 @@ export default function Splash({
 
   useEffect(() => {
     if (!exiting) return;
+    // Derive the unmount delay from the active exit transition so there's a
+    // single source of truth (slide ≈1.2s, reduced-motion crossfade ≈0.32s).
+    const exitMs = reducedMotion ? FADE_MS : SLIDE_MS;
     const t = setTimeout(() => {
       try {
         sessionStorage.setItem("splash-seen", "1");
@@ -59,11 +71,11 @@ export default function Splash({
       document.body.style.overflow = "";
       setMounted(false);
       onComplete?.();
-    }, 1250);
+    }, exitMs);
     timers.current.push(t);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exiting]);
+  }, [exiting, reducedMotion]);
 
   const handleClick = () => {
     if (!exiting) setExiting(true);
@@ -77,7 +89,20 @@ export default function Splash({
       aria-label="Studio Dentistico Fabio Barbato"
       onClick={handleClick}
       className="splash-root"
+      // Reduced motion: suppress the will-change/slide promotion and exit via
+      // an inline opacity crossfade that overrides the CSS translateY slide.
+      // data-exiting still drives the inner ring/wordmark fade in both modes.
       data-exiting={exiting ? "1" : "0"}
+      style={
+        reducedMotion
+          ? {
+              transform: "none",
+              transition: `opacity ${FADE_MS}ms ease`,
+              opacity: exiting ? 0 : 1,
+              willChange: "opacity",
+            }
+          : undefined
+      }
     >
       <div className="splash-ring" aria-hidden="true">
         <svg

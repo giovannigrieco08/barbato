@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Splash from "@/components/Splash";
-import CustomCursor from "@/components/CustomCursor";
 import Navbar from "@/components/Navbar";
 import Manifesto from "@/components/Manifesto";
 import Treatments from "@/components/Treatments";
@@ -12,6 +11,8 @@ import DrBarbato from "@/components/DrBarbato";
 import CtaFooter from "@/components/CtaFooter";
 import FloatingChat from "@/components/FloatingChat";
 import StickyOverlapController from "@/components/StickyOverlapController";
+import SectionCurtains from "@/components/SectionCurtains";
+import MediaPerf from "@/components/MediaPerf";
 
 export default function HomePageClient() {
   const [chat, setChat] = useState(false);
@@ -23,14 +24,10 @@ export default function HomePageClient() {
   };
 
   return (
-    <div
-      className="relative min-h-screen text-foreground"
-      style={{ backgroundColor: "#0A2E36" }}
-    >
+    <div className="relative min-h-screen text-foreground bg-background">
       <Splash />
-      <CustomCursor />
       <Navbar onOpenChat={() => openChat()} />
-      <main>
+      <main id="main-content">
         <Manifesto />
         <Treatments />
         <SmileAssistant onOpenChat={openChat} />
@@ -45,6 +42,8 @@ export default function HomePageClient() {
         onDraftConsumed={() => setDraft(null)}
       />
       <StickyOverlapController />
+      <SectionCurtains />
+      <MediaPerf />
     </div>
   );
 }

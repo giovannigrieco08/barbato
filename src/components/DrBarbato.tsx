@@ -50,7 +50,6 @@ function splitWords(text: string): ReactNode[] {
           {
             "--word-index": idx,
             display: "inline-block",
-            willChange: "opacity",
           } as React.CSSProperties
         }
       >
@@ -167,6 +166,15 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
       return;
     }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // FOOTER-01: senza animazione il word-reveal resterebbe a --p:0
+      // (ogni .reveal-word al 15% di opacità). Mostro il testo a piena
+      // opacità impostando --N e --p:1. Non tocca lo ScrollTrigger.
+      const hl = headlineRef.current;
+      if (hl) {
+        const n = hl.querySelectorAll(".reveal-word").length;
+        if (n > 0) hl.style.setProperty("--N", String(n));
+        hl.style.setProperty("--p", "1");
+      }
       setReady(true);
       return;
     }
@@ -281,7 +289,11 @@ export default function DrBarbato({ onOpenChat }: { onOpenChat?: () => void }) {
         );
       }
 
-      onResize = () => ScrollTrigger.refresh();
+      let resizeT: ReturnType<typeof setTimeout> | undefined;
+      onResize = () => {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => ScrollTrigger.refresh(), 200);
+      };
       window.addEventListener("resize", onResize);
       setReady(true);
     })();

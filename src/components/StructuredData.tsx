@@ -1,40 +1,46 @@
+import { studio } from "@/config/studio";
+
 export default function StructuredData() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "Dentist",
-    name: "Studio Dentistico Fabio Barbato",
-    image: "https://studiobarbato.it/images/dr-fabio-barbato.png",
-    "@id": "https://studiobarbato.it",
-    url: "https://studiobarbato.it",
-    telephone: "+39-0884-000000",
+    name: studio.legalName,
+    image: `${studio.url}${studio.ogImage}`,
+    "@id": studio.url,
+    url: studio.url,
+    telephone: studio.phone.schema,
     priceRange: "€€€",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Via del Porto, 14",
-      addressLocality: "Manfredonia",
-      addressRegion: "FG",
-      postalCode: "71043",
-      addressCountry: "IT",
+      streetAddress: studio.address.street,
+      addressLocality: studio.address.locality,
+      addressRegion: studio.address.province,
+      postalCode: studio.address.postalCode,
+      addressCountry: studio.address.countryCode,
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 41.6264,
-      longitude: 15.9173,
+      latitude: studio.geo.lat,
+      longitude: studio.geo.lng,
     },
-    openingHoursSpecification: [
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "09:00",
-        closes: "19:00",
-      },
-    ],
+    openingHoursSpecification: studio.openingHours.map((h) => ({
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: h.days,
+      opens: h.opens,
+      closes: h.closes,
+    })),
     founder: {
       "@type": "Person",
-      name: "Dr. Fabio Barbato",
-      jobTitle: "Odontoiatra · Implantologo · Direttore Sanitario",
+      name: studio.founder.name,
+      jobTitle: studio.founder.jobTitle,
     },
-    medicalSpecialty: ["Implantology", "Orthodontics", "CosmeticDentistry", "PreventiveDentistry"],
+    medicalSpecialty: "Dentistry",
+    knowsAbout: [
+      "Implantologia dentale",
+      "Ortodonzia invisibile",
+      "Estetica dentale",
+      "Odontoiatria preventiva",
+    ],
   };
 
   return (

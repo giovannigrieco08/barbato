@@ -24,27 +24,6 @@ function computeInsets(): { ix: number; iy: number } {
   return { ix, iy };
 }
 
-function TopographicPattern() {
-  return (
-    <svg
-      className="manifesto-pattern"
-      viewBox="0 0 2400 1400"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <g fill="none" stroke={M_BONE} strokeOpacity="0.05" strokeWidth="1">
-        <path d="M -200 220 Q 300 120, 700 220 T 1500 220 T 2300 220 T 3100 220" />
-        <path d="M -200 380 Q 350 280, 720 360 T 1480 380 T 2260 360 T 3000 380" />
-        <path d="M -200 540 Q 400 460, 800 540 T 1600 540 T 2400 540 T 3200 540" />
-        <path d="M -200 720 Q 280 620, 660 720 T 1420 720 T 2180 700 T 2940 720" />
-        <path d="M -200 900 Q 360 820, 760 900 T 1520 900 T 2280 900 T 3040 900" />
-        <path d="M -200 1080 Q 320 980, 700 1060 T 1460 1080 T 2220 1060 T 2980 1080" />
-        <path d="M -200 1240 Q 380 1160, 780 1240 T 1540 1240 T 2300 1240 T 3060 1240" />
-      </g>
-    </svg>
-  );
-}
-
 function MarqueeRow({
   text,
   italic,
@@ -87,10 +66,8 @@ export default function Manifesto() {
   const stickyRef = useRef<HTMLDivElement>(null);
   const videoBoxRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
-  const basedRef = useRef<HTMLDivElement>(null);
   const topRowRef = useRef<HTMLDivElement>(null);
   const botRowRef = useRef<HTMLDivElement>(null);
-  const patternRef = useRef<HTMLDivElement>(null);
   const windowBorderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,14 +94,12 @@ export default function Manifesto() {
       const sticky = stickyRef.current;
       const videoBox = videoBoxRef.current;
       const heroText = heroTextRef.current;
-      const based = basedRef.current;
       const topRow = topRowRef.current;
       const botRow = botRowRef.current;
-      const pattern = patternRef.current;
       const windowBorder = windowBorderRef.current;
       if (!section || !sticky || !videoBox) return;
 
-      const all = [topRow, botRow, videoBox, heroText, based, pattern];
+      const all = [topRow, botRow, videoBox, heroText];
       all.forEach((el) => {
         if (el) el.style.willChange = "transform, opacity";
       });
@@ -157,7 +132,7 @@ export default function Manifesto() {
         boxShadow: "0 20px 50px rgba(0, 0, 0, 0)",
         opacity: 0,
       });
-      gsap.set([pattern, topRow, botRow], { opacity: 0 });
+      gsap.set([topRow, botRow], { opacity: 0 });
 
       const isMobView = window.matchMedia("(max-width: 767px)").matches;
       const pinDistance = isMobView ? "+=180%" : "+=280%";
@@ -181,7 +156,6 @@ export default function Manifesto() {
       let targets = computeInsets();
 
       tl.to(heroText, { opacity: 0, y: -40, ease: "power1.out", duration: 0.2 }, 0.1);
-      tl.to(based, { opacity: 0, y: 30, ease: "power1.out", duration: 0.2 }, 0.1);
 
       // Video shrink: animo le 3 CSS variables (--ci-y, --ci-x, --ci-r) che
       // il browser ricompone in clip-path: inset(...) round ... . Ogni var
@@ -205,9 +179,9 @@ export default function Manifesto() {
           bottom: () => `${targets.iy}%`,
           left: () => `${targets.ix}%`,
           right: () => `${targets.ix}%`,
-          borderColor: "rgba(244, 241, 234, 0.18)",
+          borderColor: "rgba(10, 46, 54, 0.22)",
           borderRadius: 4,
-          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.45)",
+          boxShadow: "0 20px 50px rgba(0, 0, 0, 0.28)",
           opacity: 1,
           ease: "power2.inOut",
           duration: 0.5,
@@ -215,7 +189,6 @@ export default function Manifesto() {
         0.05
       );
 
-      tl.to(pattern, { opacity: 1, ease: "power1.out", duration: 0.2 }, 0.3);
       tl.to(topRow, { opacity: 1, ease: "power1.out", duration: 0.15 }, 0.4);
       tl.to(botRow, { opacity: 1, ease: "power1.out", duration: 0.15 }, 0.45);
       tl.fromTo(
@@ -230,12 +203,6 @@ export default function Manifesto() {
         { xPercent: 0, ease: "none", duration: 1 },
         0
       );
-      tl.fromTo(
-        pattern,
-        { xPercent: 0 },
-        { xPercent: -25, ease: "none", duration: 1 },
-        0
-      );
       tl.to(
         videoBox,
         { opacity: 0.5, ease: "power2.in", duration: 0.15 },
@@ -247,9 +214,13 @@ export default function Manifesto() {
         0.85
       );
 
+      let resizeT: ReturnType<typeof setTimeout> | undefined;
       onResize = () => {
-        targets = computeInsets();
-        ScrollTrigger.refresh();
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => {
+          targets = computeInsets();
+          ScrollTrigger.refresh();
+        }, 200);
       };
       window.addEventListener("resize", onResize);
 
@@ -279,17 +250,12 @@ export default function Manifesto() {
       id="top"
       ref={sectionRef}
       className="manifesto-section"
-      style={{ background: M_INK, position: "relative", zIndex: 2 }}
+      style={{ background: M_BONE, position: "relative", zIndex: 2 }}
       data-sticky-overlap="A"
     >
       <div ref={stickyRef} className="manifesto-sticky">
-        {/* Pattern + marquee z-1, z-2 — DIETRO al video. Sono invisibili
-            durante il video full-viewport, emergono solo nei bordi quando
-            il video si stringe alla window 16:9 centrale. */}
-        <div ref={patternRef} className="manifesto-pattern-wrap">
-          <TopographicPattern />
-        </div>
-
+        {/* Marquee (ink, faint) — DIETRO al video. Emerge nello sfondo bone
+            quando il video si stringe alla window 16:9 centrale. */}
         <div ref={topRowRef} className="manifesto-row manifesto-row-top">
           <MarqueeRow
             text="PRECISIONE • CURA • TEMPO • FIDUCIA •"
@@ -331,22 +297,12 @@ export default function Manifesto() {
         <div ref={windowBorderRef} className="manifesto-window-border" aria-hidden="true" />
 
         <div ref={heroTextRef} className="manifesto-hero-text">
-          <div className="manifesto-hero-eyebrow">Studio Dentistico · Manfredonia</div>
           <h1 className="manifesto-hero-headline font-heading">
             <span className="manifesto-hero-line-1">
               Il sorriso<br className="hero-break-mobile" /> che meriti,
             </span>
             <span className="manifesto-hero-line-2">ogni giorno</span>
           </h1>
-        </div>
-
-        <div ref={basedRef} className="manifesto-based">
-          <div className="manifesto-based-label">Based in:</div>
-          <ul className="manifesto-based-list">
-            <li>Manfredonia</li>
-            <li>Gargano</li>
-            <li>Puglia</li>
-          </ul>
         </div>
       </div>
 
@@ -397,7 +353,7 @@ export default function Manifesto() {
           font-weight: 400;
           line-height: 1;
           letter-spacing: -0.02em;
-          color: ${M_BONE};
+          color: ${M_INK};
         }
         .manifesto-marquee-word { display: inline-block; padding-right: 0.4em; }
 

@@ -3,20 +3,13 @@ import localFont from "next/font/local";
 import "./globals.css";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import StructuredData from "@/components/StructuredData";
+import CookieBanner from "@/components/CookieBanner";
 
 const funcity = localFont({
   src: "./fonts/FunCity.woff2",
   variable: "--font-funcity",
   display: "swap",
   preload: true,
-});
-
-const europaGrotesk = localFont({
-  src: "./fonts/EuropaGrotesk-Bold.woff2",
-  weight: "700",
-  variable: "--font-europa",
-  display: "swap",
-  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -90,7 +83,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" className={`${funcity.variable} ${europaGrotesk.variable}`}>
+    <html lang="it" className={funcity.variable}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -101,13 +94,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-body" suppressHydrationWarning>
         <a
-          href="#top"
+          href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:bg-foreground focus:text-background focus:px-4 focus:py-2 focus:rounded"
         >
           Salta al contenuto principale
         </a>
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
         <StructuredData />
+        <CookieBanner />
       </body>
     </html>
   );

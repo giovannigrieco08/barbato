@@ -117,8 +117,10 @@ function GalleriaStudioMobile() {
       const past = op >= 0.5;
       if (past && !section.classList.contains("gs-tone-bone")) {
         section.classList.add("gs-tone-bone");
+        section.dataset.navTone = "light";
       } else if (!past && section.classList.contains("gs-tone-bone")) {
         section.classList.remove("gs-tone-bone");
+        section.dataset.navTone = "dark";
       }
     };
     const onScroll = () => {
@@ -140,6 +142,7 @@ function GalleriaStudioMobile() {
       id="studio"
       ref={sectionRef}
       className="gs-section gs-section-mobile"
+      data-nav-tone="dark"
       style={{ background: G_INK, color: G_BONE, position: "relative", overflow: "hidden", padding: "10vh 0 8vh" }}
     >
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none", zIndex: 0 }}>
@@ -339,6 +342,9 @@ export default function GalleriaStudio() {
       };
 
       track.style.willChange = "transform";
+      // Leva will-change: tengo i layer GPU degli item parallax solo mentre la
+      // sezione è attiva; fuori vista li libero. Identico visivamente.
+      const parallaxItems: HTMLElement[] = [];
 
       tl = gsap.timeline({
         scrollTrigger: {
@@ -351,23 +357,29 @@ export default function GalleriaStudio() {
           invalidateOnRefresh: true,
           onLeave: () => {
             track.style.willChange = "auto";
+            parallaxItems.forEach((el) => (el.style.willChange = "auto"));
           },
           onLeaveBack: () => {
             track.style.willChange = "auto";
+            parallaxItems.forEach((el) => (el.style.willChange = "auto"));
           },
           onEnter: () => {
             track.style.willChange = "transform";
+            parallaxItems.forEach((el) => (el.style.willChange = "transform"));
           },
           onEnterBack: () => {
             track.style.willChange = "transform";
+            parallaxItems.forEach((el) => (el.style.willChange = "transform"));
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onUpdate: (self: any) => {
             const past = self.progress >= BG_FLIP_AT;
             if (past && !section.classList.contains("gs-tone-bone")) {
               section.classList.add("gs-tone-bone");
+              section.dataset.navTone = "light";
             } else if (!past && section.classList.contains("gs-tone-bone")) {
               section.classList.remove("gs-tone-bone");
+              section.dataset.navTone = "dark";
             }
           },
         },
@@ -396,6 +408,7 @@ export default function GalleriaStudio() {
         const dy = parseFloat(el.dataset.vy || "0");
         if (!dy) return;
         el.style.willChange = "transform";
+        parallaxItems.push(el);
         const inner = el.querySelector(".gs-item-inner") as HTMLElement | null;
         if (!inner) return;
         tl.fromTo(
@@ -406,8 +419,10 @@ export default function GalleriaStudio() {
         );
       });
 
+      let resizeT: ReturnType<typeof setTimeout> | undefined;
       onResize = () => {
-        ScrollTrigger.refresh();
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => ScrollTrigger.refresh(), 200);
       };
       window.addEventListener("resize", onResize);
       tRefresh = setTimeout(() => ScrollTrigger.refresh(), 250);
@@ -433,6 +448,7 @@ export default function GalleriaStudio() {
       id="studio"
       ref={sectionRef}
       className="gs-section"
+      data-nav-tone="dark"
     >
       <div ref={stickyRef} className="gs-sticky">
         <div className="gs-bg gs-bg-ink" aria-hidden="true">
@@ -606,7 +622,6 @@ export default function GalleriaStudio() {
           overflow: hidden;
           background: ${G_INK};
           transition: box-shadow 600ms ease-out;
-          cursor: pointer;
         }
         .gs-item-img:hover { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35); }
         .gs-item-img .gs-item-inner {

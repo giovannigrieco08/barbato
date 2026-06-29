@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { FadeUp, Icon, MonoMark, EASE } from "@/components/ui";
 import { RevealLines, RevealParagraph } from "@/components/reveals";
@@ -20,9 +20,33 @@ const DEMO_CONVO: ChatMsg[] = [
   { role: "user", text: "Sì, la settimana prossima se possibile." },
 ];
 
+// Flat translucent fill for inner bubbles/input — no backdrop-filter.
+// Blur is kept only on the outer card (MEDIA-04). Bot fill bumped to bone
+// ~0.09 so the bubble boundary reads as a distinct surface (MEDIA-06);
+// body text is #F4F1EA over a ~0.09 bone tint on #0F4754-ish glass → clears 4.5:1.
+const FLAT_BOT_FILL: React.CSSProperties = {
+  background: "rgba(244, 241, 234, 0.09)",
+  border: "1px solid rgba(244, 241, 234, 0.13)",
+};
+const FLAT_INPUT_FILL: React.CSSProperties = {
+  background: "rgba(244, 241, 234, 0.05)",
+  border: "1px solid rgba(244, 241, 234, 0.13)",
+};
+
 function TypingDots() {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    // Static dots — JS infinite motion must be gated (MEDIA-02).
+    return (
+      <div className="flex gap-1.5 py-1" aria-label="Sta scrivendo">
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="block w-2 h-2 rounded-full bg-primary opacity-60" />
+        ))}
+      </div>
+    );
+  }
   return (
-    <div className="flex gap-1.5 py-1">
+    <div className="flex gap-1.5 py-1" aria-label="Sta scrivendo">
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
@@ -36,22 +60,28 @@ function TypingDots() {
 }
 
 function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
-  const [visible, setVisible] = useState(0);
+  // Seed to 1 so the first bot greeting is present at mount — avoids a tall
+  // empty card on fast scroll (MEDIA-05). The interval reveals the rest.
+  const [visible, setVisible] = useState(1);
   const [draft, setDraft] = useState("");
+  const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.4 });
 
   useEffect(() => {
     if (!inView) return;
-    let i = 0;
-    const tick = () => {
-      i++;
-      if (i <= DEMO_CONVO.length + 1) {
-        setVisible(i);
-        setTimeout(tick, 700);
-      }
-    };
-    setTimeout(tick, 200);
+    // Single index-incrementing interval cleared on unmount — no orphaned
+    // timers, Strict-Mode safe (MEDIA-01).
+    const id = setInterval(() => {
+      setVisible((v) => {
+        if (v >= DEMO_CONVO.length + 1) {
+          clearInterval(id);
+          return v;
+        }
+        return v + 1;
+      });
+    }, 700);
+    return () => clearInterval(id);
   }, [inView]);
 
   return (
@@ -79,11 +109,16 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <motion.span
-            className="w-2 h-2 rounded-full bg-primary"
-            animate={{ opacity: [0.55, 1, 0.55] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          />
+          {reduce ? (
+            // Static status dot — gate JS infinite motion (MEDIA-02).
+            <span className="w-2 h-2 rounded-full bg-primary" style={{ opacity: 0.8 }} />
+          ) : (
+            <motion.span
+              className="w-2 h-2 rounded-full bg-primary"
+              animate={{ opacity: [0.55, 1, 0.55] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
           <span
             className="font-body uppercase text-foreground/60"
             style={{ fontSize: "10px", letterSpacing: "0.22em", fontWeight: 500 }}
@@ -106,21 +141,36 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
               className={
                 m.role === "user"
                   ? "bg-primary text-[#0A2E36] rounded-2xl rounded-br-md max-w-[78%] font-body"
-                  : "liquid-glass rounded-2xl rounded-bl-md max-w-[82%] font-body text-foreground"
+                  : "rounded-2xl rounded-bl-md max-w-[82%] font-body text-foreground"
               }
-              style={{ padding: "12px 16px", fontSize: "0.875rem", lineHeight: 1.55, overflowWrap: "anywhere" }}
+              style={{
+                padding: "12px 16px",
+                fontSize: "0.875rem",
+                lineHeight: 1.55,
+                overflowWrap: "anywhere",
+                ...(m.role === "bot" ? FLAT_BOT_FILL : null),
+              }}
             >
               {m.text}
             </div>
           </motion.div>
         ))}
-        {visible >= DEMO_CONVO.length && visible < DEMO_CONVO.length + 1 && (
-          <div className="flex justify-start">
-            <div className="liquid-glass rounded-2xl rounded-bl-md p-4">
-              <TypingDots />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {visible >= DEMO_CONVO.length && visible < DEMO_CONVO.length + 1 && (
+            <motion.div
+              key="typing"
+              className="flex justify-start"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: EASE }}
+            >
+              <div className="rounded-2xl rounded-bl-md p-4" style={FLAT_BOT_FILL}>
+                <TypingDots />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <form
@@ -143,7 +193,8 @@ function ChatMockup({ onOpenChat }: { onOpenChat?: (q?: string) => void }) {
           placeholder="Scrivi la tua domanda…"
           aria-label="Scrivi la tua domanda"
           maxLength={500}
-          className="flex-1 liquid-glass rounded-full px-4 py-3 font-body text-sm text-foreground placeholder:text-foreground/45 bg-transparent outline-none focus:ring-2 focus:ring-primary/40"
+          className="flex-1 rounded-full px-4 py-3 font-body text-sm text-foreground placeholder:text-foreground/60 outline-none focus:ring-2 focus:ring-primary/40"
+          style={FLAT_INPUT_FILL}
           data-cursor="hover"
         />
         <button

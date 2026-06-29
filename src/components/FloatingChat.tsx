@@ -1,10 +1,11 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Icon, MonoMark, EASE } from "@/components/ui";
+import { bookingFallbackError } from "@/config/studio";
 
-type ChatMsg = { role: "bot" | "user"; text: string };
+type ChatMsg = { id: string; role: "bot" | "user"; text: string };
 
 export default function FloatingChat({
   open,
@@ -17,8 +18,14 @@ export default function FloatingChat({
   initialDraft?: string | null;
   onDraftConsumed?: () => void;
 }) {
-  const [messages, setMessages] = useState<ChatMsg[]>([
+  const reduceMotion = useReducedMotion();
+  const idBase = useId();
+  const msgSeq = useRef(1); // m0 is the seed bot message
+  const nextId = useCallback(() => `${idBase}-m${msgSeq.current++}`, [idBase]);
+
+  const [messages, setMessages] = useState<ChatMsg[]>(() => [
     {
+      id: `${idBase}-m0`,
       role: "bot",
       text: "Ciao! Sono Smile, l’assistente dello Studio Barbato. Come posso aiutarti?",
     },
@@ -27,46 +34,121 @@ export default function FloatingChat({
   const [pending, setPending] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
+  // INFRA-10: scroll to real content height; honor reduced-motion (no smooth).
   useEffect(() => {
-    bodyRef.current?.scrollTo({ top: 1e6, behavior: "smooth" });
-  }, [messages, pending]);
+    const el = bodyRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: reduceMotion ? "auto" : "smooth" });
+  }, [messages, pending, reduceMotion]);
 
-  // Pannello aperto: chiudi con Escape; blocca lo scroll del body solo quando
-  // il pannello è a tutto schermo (mobile), non quando è un riquadro desktop.
+  // Pannello aperto: Escape per chiudere, focus trap, restore del focus al FAB,
+  // body-scroll-lock. INFRA-05/06: lock incondizionato finché è aperto (così il
+  // passaggio del breakpoint 639px non lascia lo stato stale) e ripristino in
+  // cleanup; trap inline (nessuna dipendenza) + focus restoration sul FAB.
   useEffect(() => {
     if (!open) return;
+
+    const panel = panelRef.current;
+    // Elemento da rimettere a fuoco alla chiusura: di norma il FAB.
+    const restoreTo = fabRef.current;
+
+    const getFocusable = (): HTMLElement[] => {
+      if (!panel) return [];
+      return Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+    };
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const f = getFocusable();
+      if (f.length === 0) {
+        e.preventDefault();
+        panel?.focus();
+        return;
+      }
+      const first = f[0];
+      const last = f[f.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === first || !panel?.contains(active)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last || !panel?.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    const fullScreen = window.matchMedia("(max-width: 639px)").matches;
-    let prev = "";
-    if (fullScreen) {
-      prev = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    }
+
+    // INFRA-06: lock incondizionato → niente lettura stale del breakpoint.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     // Attivazione: porta il cursore nell'input ad apertura, ma solo con
     // puntatore fine (desktop) — su touch evitiamo di forzare la tastiera.
     let focusTimer: ReturnType<typeof setTimeout> | undefined;
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       focusTimer = setTimeout(() => inputRef.current?.focus(), 260);
     }
+
     return () => {
       window.removeEventListener("keydown", onKey);
-      if (fullScreen) document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
       if (focusTimer) clearTimeout(focusTimer);
+      // INFRA-05: restore del focus al FAB alla chiusura.
+      restoreTo?.focus();
     };
   }, [open, setOpen]);
+
+  // INFRA-07: send è stabile (useCallback) → le deps dell'effetto draft sono
+  // oneste, niente closure stale. `input` non serve qui: il draft passa `text`.
+  const send = useCallback(
+    async (text?: string) => {
+      const q = (text ?? input).trim();
+      if (!q || pending) return;
+      setMessages((m) => [...m, { id: nextId(), role: "user", text: q }]);
+      setInput("");
+      setPending(true);
+      const fallbackText = bookingFallbackError;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question: q }),
+        });
+        const data = (await res.json()) as { reply?: string };
+        setMessages((m) => [
+          ...m,
+          { id: nextId(), role: "bot", text: data.reply?.trim() || fallbackText },
+        ]);
+      } catch {
+        setMessages((m) => [...m, { id: nextId(), role: "bot", text: fallbackText }]);
+      } finally {
+        setPending(false);
+      }
+    },
+    [input, pending, nextId]
+  );
 
   useEffect(() => {
     if (open && initialDraft && typeof initialDraft === "string" && initialDraft.trim()) {
       const q = initialDraft.trim();
       onDraftConsumed?.();
-      setTimeout(() => send(q), 250);
+      const t = setTimeout(() => send(q), 250);
+      return () => clearTimeout(t);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialDraft]);
+  }, [open, initialDraft, onDraftConsumed, send]);
 
   const quick = [
     "Quanto costa un impianto?",
@@ -75,45 +157,10 @@ export default function FloatingChat({
     "Come prenoto una visita?",
   ];
 
-  async function send(text?: string) {
-    const q = (text ?? input).trim();
-    if (!q || pending) return;
-    setMessages((m) => [...m, { role: "user", text: q }]);
-    setInput("");
-    setPending(true);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ question: q }),
-      });
-      const data = (await res.json()) as { reply?: string };
-      setMessages((m) => [
-        ...m,
-        {
-          role: "bot",
-          text:
-            data.reply?.trim() ||
-            "Mi scuso, c’è stato un problema tecnico. Per prenotare chiama lo 0884 000 000 o scrivi a studio@barbato.dental.",
-        },
-      ]);
-    } catch {
-      setMessages((m) => [
-        ...m,
-        {
-          role: "bot",
-          text:
-            "Mi scuso, c’è stato un problema tecnico. Per prenotare chiama lo 0884 000 000 o scrivi a studio@barbato.dental.",
-        },
-      ]);
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <>
       <button
+        ref={fabRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
@@ -138,10 +185,27 @@ export default function FloatingChat({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            ref={panelRef}
+            tabIndex={-1}
+            // INFRA-04: enter alive (spring, scala dall'angolo del FAB),
+            // EXIT più veloce e intenzionale (~200ms, curva drawer iOS).
+            // Reduced-motion: crossfade istantaneo, niente movimento.
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 20 }}
+            animate={
+              reduceMotion
+                ? { opacity: 1, transition: { duration: 0.12 } }
+                : { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 200, damping: 22 } }
+            }
+            exit={
+              reduceMotion
+                ? { opacity: 0, transition: { duration: 0.12 } }
+                : {
+                    opacity: 0,
+                    scale: 0.96,
+                    y: 12,
+                    transition: { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
+                  }
+            }
             role="dialog"
             aria-modal="true"
             aria-label="Smile Assistant"
@@ -155,6 +219,10 @@ export default function FloatingChat({
               height: "min(600px, calc(100svh - 120px))",
               borderRadius: 24,
               transformOrigin: "bottom right",
+              // Vetro scuro: translucido + blur (effetto glass) ma con tint
+              // sufficientemente scuro da garantire il contrasto del contenuto
+              // su QUALSIASI sezione dietro (anche le sezioni bianche).
+              background: "rgba(8, 33, 40, 0.72)",
             }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-foreground/10">
@@ -168,11 +236,16 @@ export default function FloatingChat({
                     Smile Assistant
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <motion.span
-                      className="w-1.5 h-1.5 rounded-full bg-primary"
-                      animate={{ opacity: [0.55, 1, 0.55] }}
-                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                    />
+                    {/* INFRA-19: pulse decorativo solo se il moto è consentito */}
+                    {reduceMotion ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    ) : (
+                      <motion.span
+                        className="w-1.5 h-1.5 rounded-full bg-primary"
+                        animate={{ opacity: [0.55, 1, 0.55] }}
+                        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                    )}
                     <span
                       className="font-body uppercase text-foreground/55"
                       style={{ fontSize: "10px", letterSpacing: "0.22em", fontWeight: 500 }}
@@ -191,13 +264,19 @@ export default function FloatingChat({
               </button>
             </div>
 
-            <div ref={bodyRef} className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
-              {messages.map((m, i) => (
+            <div
+              ref={bodyRef}
+              className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3"
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {messages.map((m) => (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
+                  key={m.id}
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, ease: EASE }}
+                  transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE }}
                   className={"flex " + (m.role === "user" ? "justify-end" : "justify-start")}
                 >
                   <div
@@ -214,16 +293,27 @@ export default function FloatingChat({
               ))}
               {pending && (
                 <div className="flex justify-start">
-                  <div className="liquid-glass rounded-2xl rounded-bl-md px-3.5 py-3">
-                    <div className="flex gap-1.5">
-                      {[0, 1, 2].map((i) => (
-                        <motion.span
-                          key={i}
-                          className="block w-1.5 h-1.5 rounded-full bg-primary"
-                          animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
-                          transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
-                        />
-                      ))}
+                  <div
+                    className="liquid-glass rounded-2xl rounded-bl-md px-3.5 py-3"
+                    aria-label="Sta scrivendo…"
+                  >
+                    <div className="flex gap-1.5" aria-hidden>
+                      {/* INFRA-19: loop dei puntini solo con moto consentito */}
+                      {[0, 1, 2].map((i) =>
+                        reduceMotion ? (
+                          <span
+                            key={i}
+                            className="block w-1.5 h-1.5 rounded-full bg-primary opacity-70"
+                          />
+                        ) : (
+                          <motion.span
+                            key={i}
+                            className="block w-1.5 h-1.5 rounded-full bg-primary"
+                            animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
+                            transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15 }}
+                          />
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -252,7 +342,16 @@ export default function FloatingChat({
               }}
               className="p-3 border-t border-foreground/10 flex items-center gap-2"
             >
-              <div className="flex-1 liquid-glass rounded-full px-4 py-2.5 flex items-center">
+              {/* INFRA-18: niente backdrop-filter annidato (il pannello già
+                  sfoca) — fill translucido piatto. Focus ring visibile sul pill
+                  via :focus-within, in sostituzione di outline-none. */}
+              <div
+                className="flex-1 rounded-full px-4 py-2.5 flex items-center transition-[box-shadow,border-color] focus-within:border-primary/60 focus-within:shadow-[0_0_0_2px_rgba(143,200,196,0.45)]"
+                style={{
+                  background: "rgba(244, 241, 234, 0.06)",
+                  border: "1px solid rgba(244, 241, 234, 0.12)",
+                }}
+              >
                 <input
                   ref={inputRef}
                   value={input}

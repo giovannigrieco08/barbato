@@ -49,7 +49,11 @@ export default function StickyOverlapController() {
         ScrollTrigger.refresh();
       });
 
-      onResize = () => ScrollTrigger.refresh();
+      let resizeT: ReturnType<typeof setTimeout> | undefined;
+      onResize = () => {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(() => ScrollTrigger.refresh(), 200);
+      };
       window.addEventListener("resize", onResize);
     })();
 

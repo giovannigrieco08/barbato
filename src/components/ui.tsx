@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useInView } from "framer-motion";
+import { motion, useMotionValue, useSpring, useInView, useReducedMotion } from "framer-motion";
 import { useRef, type ComponentProps, type ReactNode } from "react";
 
 export const EASE = [0.16, 1, 0.3, 1] as const;
@@ -25,7 +25,16 @@ export function BlurText({
   const words = text.split(" ");
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once, amount: 0.3 });
+  const reduce = useReducedMotion();
   const TagAny = Tag as React.ElementType;
+  // Reduced motion: render the text plainly, no blur/translate choreography.
+  if (reduce) {
+    return (
+      <TagAny ref={ref} className={className} style={{ display: "inline-block" }}>
+        {text}
+      </TagAny>
+    );
+  }
   return (
     <TagAny ref={ref} className={className} aria-label={text} style={{ display: "inline-block" }}>
       {words.map((w, i) => (
@@ -77,13 +86,15 @@ export function FadeUp({
 }: FadeUpProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once, amount });
+  const reduce = useReducedMotion();
+  // Reduced motion: keep an opacity fade but drop the position animation.
   return (
     <motion.div
       ref={ref}
       className={className}
-      initial={{ y, opacity: 0 }}
+      initial={reduce ? { opacity: 0 } : { y, opacity: 0 }}
       animate={inView ? { y: 0, opacity: 1 } : {}}
-      transition={{ duration: 0.8, ease: EASE, delay }}
+      transition={{ duration: reduce ? 0.4 : 0.8, ease: EASE, delay }}
     >
       {children}
     </motion.div>
@@ -102,11 +113,13 @@ export function MagneticButton({
   ...rest
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null);
+  const reduce = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 150, damping: 15 });
   const sy = useSpring(y, { stiffness: 150, damping: 15 });
   const onMove = (e: React.MouseEvent) => {
+    if (reduce) return; // no magnetic pull under reduced motion
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
     const cx = r.left + r.width / 2;
